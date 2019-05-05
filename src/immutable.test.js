@@ -1,5 +1,5 @@
 module.exports = (test) => {
-  const { immutable } = test.sut
+  const { immutable, blueprint } = test.sut
 
   return test('given `immutable`', {
     'when an immutable is constructed with valid input': {
@@ -7,6 +7,11 @@ module.exports = (test) => {
         const expected = {
           requiredString: 'hello',
           optionalString: 'world',
+          date: new Date('2019-05-05T00:00:00.000Z'),
+          regex: /[A-B]/g,
+          bool: false,
+          num: 1,
+          decimal: 1.10,
           func: () => 1,
           arr: [1, 2, 3],
           objArr: [{ one: 1 }, { two: 2 }, { three: 3 }],
@@ -35,6 +40,11 @@ module.exports = (test) => {
         const Sut = immutable('Sut', {
           requiredString: 'string',
           optionalString: 'string?',
+          date: 'date',
+          regex: 'regexp',
+          bool: 'boolean',
+          num: 'number',
+          decimal: 'decimal',
           func: 'function',
           arr: 'number[]',
           objArr: 'any[]',
@@ -77,6 +87,29 @@ module.exports = (test) => {
 
         expect(actual instanceof Sut).to.equal(true)
       },
+      'it should freeze the primitives, recursively (strict mode)': (expect) => (err, when) => {
+        'use strict'
+        expect(err).to.be.null
+        const { actual } = when
+
+        expect(() => { actual.requiredString = 'primitive-test' })
+          .to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => { actual.grandParent.requiredString = 'primitive-test' })
+          .to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => { actual.grandParent.parent.requiredString = 'primitive-test' })
+          .to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => { actual.grandParent.parent.child.requiredString = 'primitive-test' })
+          .to.throw(TypeError, 'Cannot assign to read only property')
+      },
+      'it should include the blueprint name in the TypeError (strict mode)': (expect) => (err, when) => {
+        'use strict'
+
+        expect(err).to.be.null
+        const { actual } = when
+
+        expect(() => { actual.requiredString = 'primitive-test' })
+          .to.throw(TypeError, '#<Sut>')
+      },
       'it should freeze the primitives, recursively': (expect) => (err, when) => {
         expect(err).to.be.null
         const { expected, actual } = when
@@ -92,16 +125,6 @@ module.exports = (test) => {
 
         actual.grandParent.parent.child.requiredString = 'primitive-test'
         expect(actual.grandParent.parent.child.requiredString).to.equal(expected.grandParent.parent.child.requiredString)
-      },
-      'it should throw if you set a value with strict mode': (expect) => (err, when) => {
-        'use strict'
-
-        expect(err).to.be.null
-        const { actual } = when
-        const shouldThrow = () => { actual.requiredString = 'primitive-test' }
-
-        expect(shouldThrow).to.throw(TypeError)
-        expect(shouldThrow, 'error should contain blueprint name').to.throw('#<Sut>')
       },
       'it should freeze the functions': (expect) => (err, when) => {
         expect(err).to.be.null
@@ -163,6 +186,32 @@ module.exports = (test) => {
 
         actual.grandParent.parent.child.objArr[0].one = 2
         expect(actual.grandParent.parent.child.objArr).to.deep.equal(expected.grandParent.parent.child.objArr)
+      },
+      'it should NOT allow to mutate array contents': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { actual } = when
+
+        expect(() => actual.arr.push(4)).to.throw(TypeError, 'Cannot add property')
+        expect(() => actual.arr.pop()).to.throw(TypeError, 'Cannot delete property')
+        expect(() => actual.arr.splice(1, 1)).to.throw(TypeError, 'Cannot add/remove sealed array elements')
+        expect(() => actual.arr.shift()).to.throw(TypeError, 'Cannot add/remove sealed array elements')
+        expect(() => actual.arr.unshift()).to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => actual.arr.sort()).to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => actual.arr.reverse()).to.throw(TypeError, 'Cannot assign to read only property')
+      },
+      'it should not allow property deletion': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { expected, actual } = when
+
+        delete actual.requiredString
+        expect(actual).to.deep.equal(expected)
+      },
+      'it should not allow property deletion (strict mode)': (expect) => (err, when) => {
+        'use strict'
+        expect(err).to.be.null
+        const { actual } = when
+
+        expect(() => { delete actual.requiredString }).to.throw(TypeError, 'Cannot delete property')
       }
     }, // constructed with valid input
     'when an immutable is constructed with invalid input': {
@@ -182,6 +231,41 @@ module.exports = (test) => {
         expect(err.message).to.equal('Invalid invalidInputTest: invalidInputTest.requiredString {string} is invalid, invalidInputTest.optionalString {string} is invalid')
       }
     }, // invalid input
+    'when an immutable is constructed with null input': {
+      when: () => {
+        const Sut = immutable('nullInputTest', {
+          requiredString: 'string',
+          optionalString: 'string?'
+        })
+
+        return new Sut(null)
+      },
+      'it should throw': (expect) => (err) => {
+        expect(err).to.not.be.null
+        expect(err.message).to.equal('Invalid nullInputTest: nullInputTest.requiredString {string} is invalid')
+      }
+    }, // null input
+    'when an immutable is constructed with a valid null value in the input': {
+      when: () => {
+        const Sut = immutable('nullInputTest', {
+          requiredString: 'string',
+          optionalObj: 'object?'
+        })
+        const expected = {
+          requiredString: 'one',
+          optionalObj: null
+        }
+        const actual = new Sut(expected)
+
+        return { expected, actual }
+      },
+      'it should return the value': (expect) => (err, context) => {
+        expect(err).to.be.null
+        const { expected, actual } = context
+
+        expect(actual).to.deep.equal(expected)
+      }
+    }, // null input
     'when an immutable is constructed with an invalid name': {
       when: () => {
         const Sut = immutable('invalid-input-test', {
@@ -196,7 +280,39 @@ module.exports = (test) => {
       },
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
-        expect(err.message).to.equal('Unexpected token -')
+        expect(err.message).to.equal('The name, \'invalid-input-test\', has characters that aren\'t compatible with JavaScript class names: Unexpected token -')
+      }
+    },
+    'when an immutable is constructed with an existing blueprint': {
+      when: () => {
+        const Sut = immutable(blueprint('ConstructedWithBlueprint', {
+          str: 'string'
+        }))
+        const expected = {
+          str: 'hello'
+        }
+        const actual = new Sut(expected)
+
+        return { Sut, expected, actual }
+      },
+      'it should return the value': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { expected, actual, Sut } = when
+
+        expect(actual).to.deep.equal(expected)
+        expect(actual instanceof Sut).to.equal(true)
+      }
+    },
+    'when an immutable is constructed with an invalid blueprint': {
+      'it should throw': (expect) => {
+        expect(() => { immutable('name', null) })
+          .to.throw('blueprint requires a name {string}, and a blueprint {object}')
+      }
+    },
+    'when an immutable is constructed without a name': {
+      'it should throw': (expect) => {
+        expect(() => { immutable(null, { str: 'string' }) })
+          .to.throw('blueprint requires a name {string}, and a blueprint {object}')
       }
     },
     'when an eval hack is attempted in the immutable\'s name': {

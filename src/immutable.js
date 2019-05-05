@@ -1,20 +1,20 @@
 module.exports = {
   name: 'immutable',
-  factory: ({ blueprint }) => {
+  factory: ({ is, blueprint }) => {
     /**
      * Freezes an array, and all of the array's values, recursively
      * @param {array} input - the array to freeze
      */
-    const makeArrayValuesImmutable = (input) => {
-      return input.map((val) => {
-        if (Array.isArray(val)) {
-          return makeArrayValuesImmutable(val)
-        } else if (typeof val === 'object') {
+    const freezeArray = (input) => {
+      return Object.freeze(input.map((val) => {
+        if (is.array(val)) {
+          return freezeArray(val)
+        } else if (is.object(val)) {
           return new Immutable(val)
         } else {
           return val
         }
-      })
+      }))
     }
 
     /**
@@ -24,9 +24,9 @@ module.exports = {
     const Immutable = class {
       constructor (input) {
         Object.keys(input).forEach((key) => {
-          if (Array.isArray(input[key])) {
-            this[key] = makeArrayValuesImmutable(input[key])
-          } else if (typeof input[key] === 'object') {
+          if (is.array(input[key])) {
+            this[key] = freezeArray(input[key])
+          } else if (is.object(input[key])) {
             this[key] = new Immutable(input[key])
           } else {
             this[key] = input[key]
@@ -44,13 +44,20 @@ module.exports = {
      * of objects that get validated against the given blueprint. All of the
      * properties on the returned value are immutable
      * @curried
-     * @param {string} name - the name of the immutable
-     * @param {object} model - the blueprint
+     * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
+     * @param {object} schema - the blueprint schema
      */
-    const immutable = (name, model) => {
-      // TODO: maybe validate the name to return more useful errors than "Unexpected token -"
+    const immutable = (name, schema) => {
+      let bpName, bp
 
-      const bp = blueprint(name, model)
+      if (is.object(name) && is.string(name.name) && is.function(name.validate)) {
+        // a blueprint was passed as the first argument
+        bp = name
+        bpName = name.name
+      } else {
+        bp = blueprint(name, schema)
+        bpName = name
+      }
 
       if (bp.err) {
         throw bp.err
@@ -76,20 +83,29 @@ module.exports = {
         }
       }
 
-      // class names don't allow special characters, nor executable JS
-      // so it should be safe to use eval here, as long as we limit
-      // the variables to the class name. This returns a class with the
-      // $name property, so TypeErrors indicate the correct class name
-      //
-      // eslint-disable-next-line no-eval
-      return eval(`ValidatedImmutable => class ${name} extends ValidatedImmutable {
-        constructor (...args) {
-          super(...args)
-          if (new.target === ${name}) {
-            Object.freeze(this)
+      try {
+        // class names don't allow special characters, nor executable JS
+        // so it should be safe to use eval here, as long as we limit
+        // the variables to the class name. This returns a class with the
+        // $name property, so TypeErrors indicate the correct class name
+        //
+        // eslint-disable-next-line no-eval
+        return eval(`(ValidatedImmutable) => class ${bpName} extends ValidatedImmutable {
+          constructor (...args) {
+            super(...args)
+
+            if (new.target === ${bpName}) {
+              Object.freeze(this)
+            }
           }
+        }`)(ValidatedImmutable)
+      } catch (e) {
+        if (e.message.indexOf('Unexpected') > -1) {
+          throw new Error(`The name, '${bpName}', has characters that aren't compatible with JavaScript class names: ${e.message}`)
         }
-      }`)(ValidatedImmutable)
+
+        throw e
+      }
     }
 
     return { immutable }
