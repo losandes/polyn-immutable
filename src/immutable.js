@@ -5,69 +5,6 @@ module.exports = {
      * Freezes an array, and all of the array's values, recursively
      * @param {array} input - the array to freeze
      */
-    const freezeArray = (input) => {
-      return Object.freeze(input.map((val) => {
-        if (Array.isArray(val)) {
-          return freezeArray(val)
-        } else if (typeof val === 'object') {
-          return freeze(val)
-        }
-        return val
-      }))
-    }
-
-    /**
-     * Freezes an object, and all of it's values, recursively
-     * @param {object} input - the object to freeze
-     */
-    const freeze = (input) => {
-      if (typeof input !== 'object') {
-        throw new Error('freeze expects an object')
-      }
-
-      const output = {}
-
-      Object.getOwnPropertyNames(input).forEach((key) => {
-        if (Array.isArray(input[key])) {
-          output[key] = freezeArray(input[key])
-        } else if (typeof input[key] === 'object') {
-          output[key] = freeze(input[key])
-        } else {
-          output[key] = input[key]
-        }
-      })
-
-      return Object.freeze(output)
-    }
-
-    /**
-     * Creates a blueprint and returns a function for creating new instances
-     * of objects that get validated against the given blueprint. All of the
-     * properties on the returned value are immutable
-     * @curried
-     * @param {string} name - the name of the immutable
-     * @param {object} model - the blueprint
-     */
-    const immutable2 = (name, model) => {
-      const bp = blueprint(name, model)
-
-      if (bp.err) {
-        throw bp.err
-      }
-
-      return function (input) {
-        const validationResult = bp.validate(input)
-
-        if (validationResult.err) {
-          throw validationResult.err
-        }
-
-        return freeze(validationResult.value)
-      }
-    }
-
-    // ----
-
     const makeArrayValuesImmutable = (input) => {
       return input.map((val) => {
         if (Array.isArray(val)) {
@@ -80,6 +17,10 @@ module.exports = {
       })
     }
 
+    /**
+     * Freezes an object, and all of it's values, recursively
+     * @param {object} input - the object to freeze
+     */
     const Immutable = class {
       constructor (input) {
         Object.keys(input).forEach((key) => {
@@ -98,6 +39,14 @@ module.exports = {
       }
     }
 
+    /**
+     * Creates a blueprint and returns a function for creating new instances
+     * of objects that get validated against the given blueprint. All of the
+     * properties on the returned value are immutable
+     * @curried
+     * @param {string} name - the name of the immutable
+     * @param {object} model - the blueprint
+     */
     const immutable = (name, model) => {
       // TODO: maybe validate the name to return more useful errors than "Unexpected token -"
 
@@ -107,6 +56,10 @@ module.exports = {
         throw bp.err
       }
 
+      /**
+       * Validates, and then freezes an object, and all of it's values, recursively
+       * @param {object} input - the object to freeze
+       */
       const ValidatedImmutable = class extends Immutable {
         constructor (input) {
           const validationResult = bp.validate(input)
@@ -125,7 +78,9 @@ module.exports = {
 
       // class names don't allow special characters, nor executable JS
       // so it should be safe to use eval here, as long as we limit
-      // the variables to the class name
+      // the variables to the class name. This returns a class with the
+      // $name property, so TypeErrors indicate the correct class name
+      //
       // eslint-disable-next-line no-eval
       return eval(`ValidatedImmutable => class ${name} extends ValidatedImmutable {
         constructor (...args) {
