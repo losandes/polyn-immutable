@@ -1,6 +1,9 @@
 module.exports = {
   name: 'immutable',
-  factory: ({ is, blueprint }) => {
+  factory: (Blueprint) => {
+    'use strict'
+    const { is, blueprint } = Blueprint
+
     /**
      * Freezes an array, and all of the array's values, recursively
      * @param {array} input - the array to freeze
@@ -39,6 +42,76 @@ module.exports = {
       }
     }
 
+    // const makeNamedImmutable = (name) => {
+    //   try {
+    //     // class names don't allow special characters, nor executable JS
+    //     // so it should be safe to use eval here, as long as we limit
+    //     // the variables to the class name. This returns a class with the
+    //     // $name property, so TypeErrors indicate the correct class name
+    //     //
+    //     // TODO: should we accept config that doesn't use eval, and just returns ValidatedImmutable?
+    //     //
+    //     // eslint-disable-next-line no-eval
+    //     return eval(`(Immutable) => class ${name} extends Immutable {
+    //       constructor (...args) {
+    //         super(...args)
+
+    //         if (new.target === ${name}) {
+    //           Object.freeze(this)
+    //         }
+    //       }
+    //     }`)(Immutable)
+    //   } catch (e) {
+    //     if (e.message.indexOf('Unexpected') > -1) {
+    //       throw new Error(`The name, '${name}', has characters that aren't compatible with JavaScript class names: ${e.message}`)
+    //     }
+
+    //     throw e
+    //   }
+    // }
+
+    // const makeValidatableImmutable = (bp, name) => {
+
+    // }
+
+    // const ValidatedImmutable = class extends Immutable {
+    //   constructor (input) {
+    //     const validationResult = bp.validate(input)
+
+    //     if (validationResult.err) {
+    //       throw validationResult.err
+    //     }
+
+    //     super(input)
+
+    //     if (new.target === ValidatedImmutable) {
+    //       Object.freeze(this)
+    //     }
+    //   }
+    // }
+
+    /**
+     *
+     * @curried
+     * @param {any} that
+     * @param {any} input
+     */
+    const patch = (that) => (input) => {
+      const output = Object.assign({}, that)
+
+      Object.keys(input).forEach((key) => {
+        if (is.array(input[key])) {
+          output[key] = input[key]
+        } else if (is.object(input[key])) {
+          output[key] = patch(output[key])(input[key])
+        } else {
+          output[key] = input[key]
+        }
+      })
+
+      return output
+    }
+
     /**
      * Creates a blueprint and returns a function for creating new instances
      * of objects that get validated against the given blueprint. All of the
@@ -63,6 +136,17 @@ module.exports = {
         throw bp.err
       }
 
+      try {
+        // make sure the blueprint name is class-name-compatible
+        //
+        // eslint-disable-next-line no-eval
+        eval(`class ${bpName} {}`)
+      } catch (e) {
+        if (e.message.indexOf('Unexpected') > -1) {
+          throw new Error(`The name, '${bpName}', has characters that aren't compatible with JavaScript class names: ${e.message}`)
+        }
+      }
+
       /**
        * Validates, and then freezes an object, and all of it's values, recursively
        * @param {object} input - the object to freeze
@@ -81,33 +165,42 @@ module.exports = {
             Object.freeze(this)
           }
         }
-      }
 
-      try {
-        // class names don't allow special characters, nor executable JS
-        // so it should be safe to use eval here, as long as we limit
-        // the variables to the class name. This returns a class with the
-        // $name property, so TypeErrors indicate the correct class name
-        //
-        // TODO: should we accept config that doesn't use eval, and just returns ValidatedImmutable?
-        //
-        // eslint-disable-next-line no-eval
-        return eval(`(ValidatedImmutable) => class ${bpName} extends ValidatedImmutable {
-          constructor (...args) {
-            super(...args)
-
-            if (new.target === ${bpName}) {
-              Object.freeze(this)
-            }
-          }
-        }`)(ValidatedImmutable)
-      } catch (e) {
-        if (e.message.indexOf('Unexpected') > -1) {
-          throw new Error(`The name, '${bpName}', has characters that aren't compatible with JavaScript class names: ${e.message}`)
+        patch (input) {
+          return new ValidatedImmutable(patch(this)(input))
         }
-
-        throw e
       }
+
+      return ValidatedImmutable
+      // try {
+      //   // class names don't allow special characters, nor executable JS
+      //   // so it should be safe to use eval here, as long as we limit
+      //   // the variables to the class name. This returns a class with the
+      //   // $name property, so TypeErrors indicate the correct class name
+      //   //
+      //   // TODO: should we accept config that doesn't use eval, and just returns ValidatedImmutable?
+      //   //
+      //   // eslint-disable-next-line no-eval
+      //   return eval(`(ValidatedImmutable) => class ${bpName} extends ValidatedImmutable {
+      //     constructor (...args) {
+      //       super(...args)
+
+      //       if (new.target === ${bpName}) {
+      //         Object.freeze(this)
+      //       }
+      //     }
+
+      //     patch (input) {
+      //       return new ${bpName}(patch(this)(input))
+      //     }
+      //   }`)(ValidatedImmutable)
+      // } catch (e) {
+      //   if (e.message.indexOf('Unexpected') > -1) {
+      //     throw new Error(`The name, '${bpName}', has characters that aren't compatible with JavaScript class names: ${e.message}`)
+      //   }
+
+      //   throw e
+      // }
     }
 
     const push = (arr) => (newEntry) => {
@@ -144,10 +237,6 @@ module.exports = {
 
     const copy = (arr) => () => {
       return [ ...arr ]
-    }
-
-    const patch = (that) => (input) => {
-      [ ...that, ...input ]
     }
 
     return {

@@ -1,5 +1,5 @@
 module.exports = (test) => {
-  const { immutable, patch, blueprint } = test.sut
+  const { immutable, blueprint } = test.sut
 
   return test('given `immutable`', {
     'when an immutable is constructed with valid input': {
@@ -76,10 +76,9 @@ module.exports = (test) => {
       },
       'it should return the value': (expect) => (err, when) => {
         expect(err).to.be.null
-        const { expected, actual, Sut } = when
+        const { expected, actual } = when
 
         expect(actual).to.deep.equal(expected)
-        expect(actual instanceof Sut).to.equal(true)
       },
       'it should return a class that supports `instanceof`': (expect) => (err, when) => {
         expect(err).to.be.null
@@ -101,13 +100,16 @@ module.exports = (test) => {
         expect(() => { actual.grandParent.parent.child.requiredString = 'primitive-test' })
           .to.throw(TypeError, 'Cannot assign to read only property')
       },
-      'it should include the blueprint name in the TypeError (strict mode)': (expect) => (err, when) => {
+      '// it should include the blueprint name in the TypeError (strict mode)': (expect) => (err, when) => {
         'use strict'
 
         expect(err).to.be.null
         const { actual } = when
 
         expect(() => { actual.requiredString = 'primitive-test' })
+          .to.throw(TypeError, '#<Sut>')
+
+        expect(() => { actual.grandParent.requiredString = 'primitive-test' })
           .to.throw(TypeError, '#<Sut>')
       },
       'it should freeze the primitives, recursively': (expect) => (err, when) => {
@@ -141,6 +143,27 @@ module.exports = (test) => {
 
         actual.grandParent.parent.child.func = () => 2
         expect(actual.grandParent.parent.child.func()).to.equal(1)
+      },
+      'it should freeze function references': (expect) => {
+        let func = () => 1
+        const Immutable = immutable('functionReference', {
+          func: 'function'
+        })
+        const actual = new Immutable({ func })
+        expect(actual.func()).to.equal(1)
+        func = () => 2
+        expect(actual.func()).to.equal(1)
+      },
+      'it should freeze function references (strict mode doesn\'t throw)': (expect) => {
+        'use strict'
+        let func = () => 1
+        const Immutable = immutable('functionReference', {
+          func: 'function'
+        })
+        const actual = new Immutable({ func })
+        expect(actual.func()).to.equal(1)
+        func = () => 2
+        expect(actual.func()).to.equal(1)
       },
       'it should freeze the objects': (expect) => (err, when) => {
         expect(err).to.be.null
@@ -297,10 +320,9 @@ module.exports = (test) => {
       },
       'it should return the value': (expect) => (err, when) => {
         expect(err).to.be.null
-        const { expected, actual, Sut } = when
+        const { expected, actual } = when
 
         expect(actual).to.deep.equal(expected)
-        expect(actual instanceof Sut).to.equal(true)
       }
     },
     'when an immutable is constructed with an invalid blueprint': {
@@ -334,24 +356,32 @@ module.exports = (test) => {
           str2: 'string',
           arr1: 'number[]',
           arr2: 'number[]',
+          optional1: 'string?',
+          optional2: 'string?',
           nest: {
             str1: 'string',
             str2: 'string',
             arr1: 'number[]',
             arr2: 'number[]',
+            optional1: 'string?',
+            optional2: 'string?'
           }
         })
 
-        const input = {
+        const expectedOriginal = {
           str1: 'original',
           str2: 'original',
           arr1: [1, 2, 3],
           arr2: [1, 2, 3],
+          optional1: 'original',
+          optional2: 'original',
           nest: {
             str1: 'nest-original',
             str2: 'nest-original',
             arr1: [1, 2, 3],
-            arr2: [1, 2, 3]
+            arr2: [1, 2, 3],
+            optional1: 'original',
+            optional2: 'original'
           }
         }
 
@@ -360,31 +390,51 @@ module.exports = (test) => {
           str2: 'patched',
           arr1: [1, 2, 3],
           arr2: [3, 4, 5],
+          optional1: null,
+          optional2: undefined,
           nest: {
             str1: 'nest-original',
             str2: 'nest-patched',
             arr1: [1, 2, 3],
-            arr2: [3, 4, 5]
+            arr2: [3, 4, 5],
+            optional1: null,
+            optional2: undefined
           }
         }
 
-        const actual = new Sut(input)
-        const patched = patch(actual)({
+        const actualOriginal = new Sut(expectedOriginal)
+        const actual = actualOriginal.patch({
           str2: expected.str2,
           arr2: expected.arr2,
+          optional1: expected.optional1,
+          optional2: expected.optional2,
           nest: {
             str2: expected.nest.str2,
-            arr2: expected.nest.arr2
+            arr2: expected.nest.arr2,
+            optional1: expected.optional1,
+            optional2: expected.optional2
           }
         })
 
-        return { expected, patched }
+        return { expectedOriginal, actualOriginal, expected, actual, Sut }
       },
       'it should only patch the values that are given': (expect) => (err, when) => {
         expect(err).to.be.null
-        const { expected, patched } = when
+        const { expected, actual } = when
 
-        expect(patched).to.deep.equal(expected)
+        expect(actual).to.deep.equal(expected)
+      },
+      'it should return a class that supports `instanceof`': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { actual, Sut } = when
+
+        expect(actual instanceof Sut).to.equal(true)
+      },
+      'it should not mutate the original object': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { expectedOriginal, actualOriginal } = when
+
+        expect(actualOriginal).to.deep.equal(expectedOriginal)
       }
     }
   })
