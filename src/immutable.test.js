@@ -1,5 +1,5 @@
 module.exports = (test) => {
-  const { immutable, blueprint } = test.sut
+  const { immutable, patch, blueprint } = test.sut
 
   return test('given `immutable`', {
     'when an immutable is constructed with valid input': {
@@ -325,6 +325,66 @@ module.exports = (test) => {
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
         expect(err.message).to.contain('Unexpected')
+      }
+    },
+    'when an immutable is patched': {
+      when: () => {
+        const Sut = immutable('PatchTest', {
+          str1: 'string',
+          str2: 'string',
+          arr1: 'number[]',
+          arr2: 'number[]',
+          nest: {
+            str1: 'string',
+            str2: 'string',
+            arr1: 'number[]',
+            arr2: 'number[]',
+          }
+        })
+
+        const input = {
+          str1: 'original',
+          str2: 'original',
+          arr1: [1, 2, 3],
+          arr2: [1, 2, 3],
+          nest: {
+            str1: 'nest-original',
+            str2: 'nest-original',
+            arr1: [1, 2, 3],
+            arr2: [1, 2, 3]
+          }
+        }
+
+        const expected = {
+          str1: 'original',
+          str2: 'patched',
+          arr1: [1, 2, 3],
+          arr2: [3, 4, 5],
+          nest: {
+            str1: 'nest-original',
+            str2: 'nest-patched',
+            arr1: [1, 2, 3],
+            arr2: [3, 4, 5]
+          }
+        }
+
+        const actual = new Sut(input)
+        const patched = patch(actual)({
+          str2: expected.str2,
+          arr2: expected.arr2,
+          nest: {
+            str2: expected.nest.str2,
+            arr2: expected.nest.arr2
+          }
+        })
+
+        return { expected, patched }
+      },
+      'it should only patch the values that are given': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { expected, patched } = when
+
+        expect(patched).to.deep.equal(expected)
       }
     }
   })

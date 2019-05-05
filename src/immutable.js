@@ -89,6 +89,8 @@ module.exports = {
         // the variables to the class name. This returns a class with the
         // $name property, so TypeErrors indicate the correct class name
         //
+        // TODO: should we accept config that doesn't use eval, and just returns ValidatedImmutable?
+        //
         // eslint-disable-next-line no-eval
         return eval(`(ValidatedImmutable) => class ${bpName} extends ValidatedImmutable {
           constructor (...args) {
@@ -108,6 +110,62 @@ module.exports = {
       }
     }
 
-    return { immutable }
+    const push = (arr) => (newEntry) => {
+      return [ ...arr, newEntry ]
+    }
+
+    const pop = (arr) => () => {
+      return arr.slice(0, -1)
+    }
+
+    const shift = (arr) => () => {
+      return arr.slice(1)
+    }
+
+    const unshift = (arr) => (newEntry) => {
+      return [ newEntry, ...arr ]
+    }
+
+    const sort = (arr) => (compareFunction) => {
+      return [ ...arr ].sort(compareFunction)
+    }
+
+    const reverse = (arr) => () => {
+      return [ ...arr ].reverse()
+    }
+
+    const splice = (arr) => (start, deleteCount, ...items) => {
+      return [ ...arr.slice(0, start), ...items, ...arr.slice(start + deleteCount) ]
+    }
+
+    const remove = (arr) => (index) => {
+      return arr.slice(0, index).concat(arr.slice(index + 1))
+    }
+
+    const copy = (arr) => () => {
+      return [ ...arr ]
+    }
+
+    const patch = (that) => (input) => {
+      [ ...that, ...input ]
+    }
+
+    return {
+      immutable,
+      patch,
+      array: (arr) => {
+        return {
+          push: push(arr),
+          pop: pop(arr),
+          shift: shift(arr),
+          unshift: unshift(arr),
+          sort: sort(arr),
+          reverse: reverse(arr),
+          splice: splice(arr),
+          remove: remove(arr),
+          copy: copy(arr)
+        }
+      }
+    }
   }
 }
