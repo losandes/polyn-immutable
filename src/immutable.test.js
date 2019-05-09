@@ -1,75 +1,93 @@
-module.exports = (test) => {
-  const { immutable, blueprint } = test.sut
+const Ajv = require('ajv')
 
+module.exports = (test) => {
+  const { immutable, Immutable, blueprint } = test.sut
+
+  // PREP ======================================================================
+  const types = () => {
+    return {
+      requiredString: 'string',
+      optionalString: 'string?',
+      maybeNullString: 'string?',
+      maybeUndefinedString: 'string?',
+      date: 'date',
+      regex: 'regexp',
+      bool: 'boolean',
+      num: 'number',
+      decimal: 'decimal',
+      func: 'function',
+      arr: 'number[]',
+      objArr: 'any[]'
+    }
+  }
+
+  const oneValues = () => {
+    return {
+      requiredString: 'one',
+      optionalString: 'one',
+      maybeNullString: 'one',
+      maybeUndefinedString: 'one',
+      date: new Date('2019-05-04T00:00:00.000Z'),
+      regex: /[A-Z]/g,
+      bool: false,
+      num: 1,
+      decimal: 1.10,
+      func: () => 1,
+      arr: [1, 2, 3],
+      objArr: [{ one: 1 }, { two: 2 }, { three: 3 }]
+    }
+  }
+
+  const twoValues = () => {
+    return {
+      requiredString: 'two',
+      optionalString: 'two',
+      maybeNullString: null,
+      maybeUndefinedString: undefined,
+      date: new Date('2019-05-05T00:00:00.000Z'),
+      regex: /[1-9]/g,
+      bool: true,
+      num: 2,
+      decimal: 2.20,
+      func: () => 2,
+      arr: [4, 5, 6],
+      objArr: [{ four: 4 }, { five: 5 }, { six: 6 }]
+    }
+  }
+
+  const makeModel = () => {
+    const model = types()
+    model.grandParent = types()
+    model.grandParent.parent = types()
+    model.grandParent.parent.child = types()
+
+    return model
+  }
+
+  const makeOne = () => {
+    const one = oneValues()
+    one.grandParent = oneValues()
+    one.grandParent.parent = oneValues()
+    one.grandParent.parent.child = oneValues()
+
+    return one
+  }
+
+  const makeTwo = () => {
+    const two = twoValues()
+    two.grandParent = twoValues()
+    two.grandParent.parent = twoValues()
+    two.grandParent.parent.child = twoValues()
+
+    return two
+  }
+
+  // TEST ======================================================================
   return test('given `immutable`', {
     'when an immutable is constructed with valid input': {
       when: () => {
-        const expected = {
-          requiredString: 'hello',
-          optionalString: 'world',
-          date: new Date('2019-05-05T00:00:00.000Z'),
-          regex: /[A-B]/g,
-          bool: false,
-          num: 1,
-          decimal: 1.10,
-          func: () => 1,
-          arr: [1, 2, 3],
-          objArr: [{ one: 1 }, { two: 2 }, { three: 3 }],
-          grandParent: {
-            requiredString: 'hello',
-            optionalString: 'world',
-            func: () => 1,
-            arr: [1, 2, 3],
-            objArr: [{ one: 1 }, { two: 2 }, { three: 3 }],
-            parent: {
-              requiredString: 'hello',
-              optionalString: 'world',
-              func: () => 1,
-              arr: [1, 2, 3],
-              objArr: [{ one: 1 }, { two: 2 }, { three: 3 }],
-              child: {
-                requiredString: 'hello',
-                optionalString: 'world',
-                func: () => 1,
-                arr: [1, 2, 3],
-                objArr: [{ one: 1 }, { two: 2 }, { three: 3 }]
-              }
-            }
-          }
-        }
-        const Sut = immutable('Sut', {
-          requiredString: 'string',
-          optionalString: 'string?',
-          date: 'date',
-          regex: 'regexp',
-          bool: 'boolean',
-          num: 'number',
-          decimal: 'decimal',
-          func: 'function',
-          arr: 'number[]',
-          objArr: 'any[]',
-          grandParent: {
-            requiredString: 'string',
-            optionalString: 'string?',
-            func: 'function',
-            arr: 'number[]',
-            objArr: 'any[]',
-            parent: {
-              requiredString: 'string',
-              optionalString: 'string?',
-              func: 'function',
-              arr: 'number[]',
-              objArr: 'any[]',
-              child: {
-                requiredString: 'string',
-                optionalString: 'string?',
-                func: 'function',
-                arr: 'number[]',
-                objArr: 'any[]'
-              }
-            }
-          }
-        })
+        const Sut = immutable('Constructor', makeModel())
+        const expected = makeOne()
         const actual = new Sut(expected)
 
         return { expected, actual, Sut }
@@ -288,10 +306,10 @@ module.exports = (test) => {
 
         expect(actual).to.deep.equal(expected)
       }
-    }, // null input
+    }, // null value in input
     'when an immutable is constructed with an invalid name': {
       when: () => {
-        const Sut = immutable('invalid-input-test', {
+        const Sut = immutable(null, {
           requiredString: 'string',
           optionalString: 'string?'
         })
@@ -303,9 +321,9 @@ module.exports = (test) => {
       },
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
-        expect(err.message).to.equal('The name, \'invalid-input-test\', has characters that aren\'t compatible with JavaScript class names: Unexpected token -')
+        expect(err.message).to.equal('blueprint requires a name {string}, and a schema {object}')
       }
-    },
+    }, // ctor invalid name
     'when an immutable is constructed with an existing blueprint': {
       when: () => {
         const Sut = immutable(blueprint('ConstructedWithBlueprint', {
@@ -324,97 +342,26 @@ module.exports = (test) => {
 
         expect(actual).to.deep.equal(expected)
       }
-    },
+    }, // ctor existing blueprint
     'when an immutable is constructed with an invalid blueprint': {
       'it should throw': (expect) => {
         expect(() => { immutable('name', null) })
-          .to.throw('blueprint requires a name {string}, and a blueprint {object}')
+          .to.throw('blueprint requires a name {string}, and a schema {object}')
       }
-    },
+    }, // ctor invalid blueprint
     'when an immutable is constructed without a name': {
       'it should throw': (expect) => {
         expect(() => { immutable(null, { str: 'string' }) })
-          .to.throw('blueprint requires a name {string}, and a blueprint {object}')
+          .to.throw(`blueprint requires a name {string}, and a schema {object}`)
       }
-    },
-    'when an eval hack is attempted in the immutable\'s name': {
-      when: () => {
-        return immutable('invalidInputTest; console.log(\'EVIL!\')', {
-          requiredString: 'string',
-          optionalString: 'string?'
-        })
-      },
-      'it should throw': (expect) => (err) => {
-        expect(err).to.not.be.null
-        expect(err.message).to.contain('Unexpected')
-      }
-    },
+    }, // ctor without name
     'when an immutable is patched': {
       when: () => {
-        const Sut = immutable('PatchTest', {
-          str1: 'string',
-          str2: 'string',
-          arr1: 'number[]',
-          arr2: 'number[]',
-          optional1: 'string?',
-          optional2: 'string?',
-          nest: {
-            str1: 'string',
-            str2: 'string',
-            arr1: 'number[]',
-            arr2: 'number[]',
-            optional1: 'string?',
-            optional2: 'string?'
-          }
-        })
-
-        const expectedOriginal = {
-          str1: 'original',
-          str2: 'original',
-          arr1: [1, 2, 3],
-          arr2: [1, 2, 3],
-          optional1: 'original',
-          optional2: 'original',
-          nest: {
-            str1: 'nest-original',
-            str2: 'nest-original',
-            arr1: [1, 2, 3],
-            arr2: [1, 2, 3],
-            optional1: 'original',
-            optional2: 'original'
-          }
-        }
-
-        const expected = {
-          str1: 'original',
-          str2: 'patched',
-          arr1: [1, 2, 3],
-          arr2: [3, 4, 5],
-          optional1: null,
-          optional2: undefined,
-          nest: {
-            str1: 'nest-original',
-            str2: 'nest-patched',
-            arr1: [1, 2, 3],
-            arr2: [3, 4, 5],
-            optional1: null,
-            optional2: undefined
-          }
-        }
-
+        const Sut = immutable('PatchTest', makeModel())
+        const expectedOriginal = makeOne()
         const actualOriginal = new Sut(expectedOriginal)
-        const actual = actualOriginal.patch({
-          str2: expected.str2,
-          arr2: expected.arr2,
-          optional1: expected.optional1,
-          optional2: expected.optional2,
-          nest: {
-            str2: expected.nest.str2,
-            arr2: expected.nest.arr2,
-            optional1: expected.optional1,
-            optional2: expected.optional2
-          }
-        })
+        const expected = makeTwo()
+        const actual = actualOriginal.patch(expected)
 
         return { expectedOriginal, actualOriginal, expected, actual, Sut }
       },
@@ -435,6 +382,374 @@ module.exports = (test) => {
         const { expectedOriginal, actualOriginal } = when
 
         expect(actualOriginal).to.deep.equal(expectedOriginal)
+      }
+    }, // patch
+    'when `toObject` is called': {
+      when: () => {
+        const Sut = immutable('ToObjectTest', makeModel())
+        const expected = makeOne()
+        const sut = new Sut(expected)
+
+        return { expected, sut }
+      },
+      'it should return all of the values': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { expected, sut } = when
+
+        expect(sut.toObject()).to.deep.equal(expected)
+      },
+      'the values should be writable': (expect) => (err, when) => {
+        'use strict'
+        expect(err).to.be.null
+        const { sut } = when
+        const actual = sut.toObject()
+        const expected = makeTwo()
+
+        Object.keys(expected).forEach((key) => {
+          if (key === 'grandParent') return
+
+          actual[key] = expected[key]
+        })
+
+        Object.keys(expected.grandParent).forEach((key) => {
+          if (key === 'parent') return
+
+          actual.grandParent[key] = expected.grandParent[key]
+        })
+
+        Object.keys(expected.grandParent.parent).forEach((key) => {
+          if (key === 'child') return
+
+          actual.grandParent.parent[key] = expected.grandParent.parent[key]
+        })
+
+        Object.keys(expected.grandParent.parent.child).forEach((key) => {
+          actual.grandParent.parent.child[key] = expected.grandParent.parent.child[key]
+        })
+
+        expect(actual).to.deep.equal(expected)
+        expect(actual.func()).to.equal(2)
+        expect(actual.grandParent.func()).to.equal(2)
+        expect(actual.grandParent.parent.func()).to.equal(2)
+        expect(actual.grandParent.parent.child.func()).to.equal(2)
+      }
+    }, // toObject
+    'prototype functions should not show up as Object.keys': (expect) => {
+      const Sut = immutable('prototypeKeys', { str: 'string', child: { str: 'string' } })
+      const sut = new Sut({ str: 'foo', child: { str: 'foo' } })
+      const parentKeys = Object.keys(sut)
+      const childKeys = Object.keys(sut.child)
+
+      expect(parentKeys.includes('patch')).to.equal(false)
+      expect(parentKeys.includes('toObject')).to.equal(false)
+      expect(parentKeys.indexOf('patch')).to.equal(-1)
+      expect(parentKeys.indexOf('toObject')).to.equal(-1)
+
+      expect(childKeys.includes('patch')).to.equal(false)
+      expect(childKeys.includes('toObject')).to.equal(false)
+      expect(childKeys.indexOf('patch')).to.equal(-1)
+      expect(childKeys.indexOf('toObject')).to.equal(-1)
+    },
+    'when a new `Immutable` is constructed': {
+      'it should let you set the Validator': (expect) => {
+        const expected = {
+          name: 'NewImmutable:Validator',
+          schema: { str: 'string' },
+          input: { str: 'foo' }
+        }
+        let actual = {}
+
+        function Validator (name, schema) {
+          actual.name = name
+          actual.schema = schema
+
+          return {
+            validate: (input) => {
+              actual.input = input
+              return true
+            }
+          }
+        }
+        const immutable = new Immutable({ Validator })
+        const Sut = immutable(expected.name, expected.schema)
+        const sut = new Sut(expected.input)
+
+        expect(actual.name).to.equal(expected.name)
+        expect(actual.schema).to.deep.equal(expected.schema)
+        expect(actual.input).to.deep.equal(expected.input)
+      },
+      'it should support using JSON Schema': (expect) => {
+        const expected = {
+          name: 'NewImmutable:JSONSchema',
+          schema: {
+            $id: 'https://example.com/person.schema.json',
+            $schema: 'http://json-schema.org/schema#',
+            title: 'Person',
+            type: 'object',
+            properties: {
+              firstName: {
+                type: 'string',
+                description: 'The person\'s first name.'
+              },
+              lastName: {
+                type: 'string',
+                description: 'The person\'s last name.'
+              },
+              age: {
+                description: 'Age in years which must be equal to or greater than zero.',
+                type: 'integer',
+                minimum: 0
+              }
+            }
+          },
+          validInput: {
+            firstName: 'John',
+            lastName: 'Doe',
+            age: 21
+          },
+          invalidInput: {
+            firstName: 1,
+            lastName: 2,
+            age: -1
+          }
+        }
+
+        function Validator (name, schema) {
+          const makeErrorText = (errors) => {
+            return errors
+              .map((error) => `${name}${error.dataPath} ${error.message}`)
+              .join(', ')
+          }
+          return {
+            validate: (input) => {
+              const ajv = new Ajv({ allErrors: true })
+              const isValid = ajv.validate(schema, input)
+
+              if (!isValid) {
+                throw new Error(`Invalid ${name}: ${makeErrorText(ajv.errors)}`)
+              }
+            }
+          }
+        }
+        const immutable = new Immutable({ Validator })
+        const Sut = immutable(expected.name, expected.schema)
+        const actualValid = new Sut(expected.validInput)
+        const actualInvalid = () => new Sut(expected.invalidInput)
+
+        expect(actualValid).to.deep.equal(expected.validInput)
+        expect(actualInvalid).to.throw(Error, 'Invalid NewImmutable:JSONSchema: NewImmutable:JSONSchema.firstName should be string, NewImmutable:JSONSchema.lastName should be string, NewImmutable:JSONSchema.age should be >= 0')
+      }
+    }, // setValidator
+    '// benchmark': {
+      when: () => {
+        const times = 1000
+
+        const objStart = new Date().getTime()
+
+        for (let i = 0; i < times; i += 1) {
+          makeOne()
+        }
+
+        const objEnd = new Date().getTime()
+
+        const immutableStart = new Date().getTime()
+        const Sut = immutable('benchmark', makeModel())
+        const val = makeOne()
+
+        for (let i = 0; i < times; i += 1) {
+          let one = new Sut(val)
+        }
+
+        const immutableEnd = new Date().getTime()
+
+        return {
+          objDuration: objEnd - objStart,
+          immutableDuration: immutableEnd - immutableStart
+        }
+      },
+      'compared to regular objects (note ~1/2+ the time is validation)': (expect) => (err, results) => {
+        expect(err).to.be.null
+
+        console.log(`Duration for creating objects (ms): ${results.objDuration}`)
+        console.log(`Duration for creating immutables (ms): ${results.immutableDuration}`)
+      }
+    },
+    'documentation': {
+      '// usage': () => {
+        // const { immutable } = require('@polyn/immutable')
+
+        const Product = immutable('Product', {
+          id: 'string',
+          title: 'string',
+          description: 'string',
+          price: 'decimal:2',
+          type: /^book|magazine|card$/,
+          metadata: {
+            keywords: 'string[]',
+            isbn: 'string?'
+          }
+        })
+
+        const product = new Product({
+          id: '5623c1263b952eb796d79e03',
+          title: 'Swamplandia',
+          description: 'From the celebrated...',
+          price: 9.99,
+          type: 'book',
+          metadata: {
+            keywords: ['swamp'],
+            isbn: '0-307-26399-1'
+          }
+        })
+
+        console.log(product)
+
+        try {
+          const product2 = new Product({
+            id: '5623c1263b952eb796d79e03',
+            title: null, // this is required!
+            description: 'From the celebrated...',
+            price: 9.99,
+            type: 'book',
+            metadata: {
+              keywords: ['swamp'],
+              isbn: '0-307-26399-1'
+            }
+          })
+        } catch (e) {
+          console.log(e.message)
+          // will print Invalid Product: Product.title {string} is invalid
+        }
+      },
+      '// patch': () => {
+        // const { immutable } = require('@polyn/immutable')
+        const { gt } = require('@polyn/blueprint')
+
+        const Person = immutable('Person', {
+          firstName: 'string',
+          lastName: 'string',
+          age: gt(0)
+        })
+
+        const person = new Person({
+          firstName: 'John',
+          lastName: 'Doe',
+          age: 21
+        })
+
+        console.log(person)
+        // prints { firstName: 'John', lastName: 'Doe', age: 21 }
+
+        const modified = person.patch({ age: 22 })
+
+        console.log(person)
+        // prints { firstName: 'John', lastName: 'Doe', age: 21 }
+        console.log(modified)
+        // prints { firstName: 'John', lastName: 'Doe', age: 22 }
+      },
+      '// toObject': () => {
+        // const { immutable } = require('@polyn/immutable')
+        const { gt } = require('@polyn/blueprint')
+
+        const Person = immutable('Person', {
+          firstName: 'string',
+          lastName: 'string',
+          age: gt(0)
+        })
+
+        const person = new Person({
+          firstName: 'John',
+          lastName: 'Doe',
+          age: 21
+        })
+
+        console.log(person)
+        // prints { firstName: 'John', lastName: 'Doe', age: 21 }
+
+        const mutable = person.toObject()
+        mutable.age = 22
+        const modified = new Person(mutable)
+
+        console.log(person)
+        // prints { firstName: 'John', lastName: 'Doe', age: 21 }
+        console.log(modified)
+        // prints { firstName: 'John', lastName: 'Doe', age: 22 }
+      },
+      '// ajv': () => {
+        // const { Immutable } = require('@polyn/immutable')
+
+        /**
+         * Creates a validator that uses ajv to validate data against
+         * the given JSON Schema
+         * @param {string} name - the name of the model being validated
+         * @param {object} schema - the JSON Schema this model should match
+         */
+        function AjvValidator (name, schema) {
+          const makeErrorText = (errors) => {
+            return errors
+              .map((error) => `${name}${error.dataPath} ${error.message}`)
+              .join(', ')
+          }
+          return {
+            validate: (input) => {
+              // allErrors: don't exit on first error
+              const ajv = new Ajv({ allErrors: true })
+              const isValid = ajv.validate(schema, input)
+
+              if (!isValid) {
+                throw new Error(`Invalid ${name}: ${makeErrorText(ajv.errors)}`)
+              }
+            }
+          }
+        }
+
+        const immutable = new Immutable({ Validator: AjvValidator })
+
+        const Person = immutable('Person', {
+          $id: 'https://example.com/person.schema.json',
+          $schema: 'http://json-schema.org/schema#',
+          title: 'Person',
+          type: 'object',
+          properties: {
+            firstName: {
+              type: 'string',
+              description: 'The person\'s first name.'
+            },
+            lastName: {
+              type: 'string',
+              description: 'The person\'s last name.'
+            },
+            age: {
+              description: 'Age in years which must be equal to or greater than zero.',
+              type: 'integer',
+              minimum: 0
+            }
+          }
+        })
+
+        const person = new Person({
+          firstName: 'John',
+          lastName: 'Doe',
+          age: 21
+        })
+
+        console.log(person)
+        // prints: ValidatedImmutable { firstName: 'John', lastName: 'Doe', age: 21 }
+
+        try {
+          const person2 = new Person({
+            firstName: 1,
+            lastName: 2,
+            age: -1
+          })
+        } catch (e) {
+          console.log(e.message)
+          // prints ( `\` line breaks for readability):
+          // Invalid Person: \
+          // Person.firstName should be string, \
+          // Person.lastName should be string, \
+          // Person.age should be >= 0
+        }
       }
     }
   })

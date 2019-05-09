@@ -3,6 +3,49 @@ module.exports = {
   factory: (Blueprint) => {
     'use strict'
     const { is, blueprint } = Blueprint
+    const config = {}
+
+    /**
+     * Returns true if the object matches the (@polyn/blueprint).blueprint signature
+     * @param {any} input - the value to test
+     */
+    const isBlueprint = (input) => {
+      return is.object(input) &&
+        is.string(input.name) &&
+        is.function(input.validate) &&
+        is.object(input.schema)
+    }
+
+    /**
+     * The default validator uses @polyn/blueprint for vaidation
+     * This can be overrided, to use things like ajv and JSON Schemas
+     * @param {string} name - the name of the model
+     * @param {object} schema - the blueprint schema
+     */
+    function Validator (name, schema) {
+      let bp
+
+      if (isBlueprint(name)) {
+        // a blueprint was passed as the first argument
+        bp = name
+      } else {
+        bp = blueprint(name, schema)
+      }
+
+      if (bp.err) {
+        throw bp.err
+      }
+
+      return {
+        validate: (input) => {
+          const validationResult = bp.validate(input)
+
+          if (validationResult.err) {
+            throw validationResult.err
+          }
+        }
+      }
+    }
 
     /**
      * Freezes an array, and all of the array's values, recursively
@@ -40,61 +83,18 @@ module.exports = {
           Object.freeze(this)
         }
       }
+
+      toObject () {
+        return toObject(this)
+      }
     }
 
-    // const makeNamedImmutable = (name) => {
-    //   try {
-    //     // class names don't allow special characters, nor executable JS
-    //     // so it should be safe to use eval here, as long as we limit
-    //     // the variables to the class name. This returns a class with the
-    //     // $name property, so TypeErrors indicate the correct class name
-    //     //
-    //     // TODO: should we accept config that doesn't use eval, and just returns ValidatedImmutable?
-    //     //
-    //     // eslint-disable-next-line no-eval
-    //     return eval(`(Immutable) => class ${name} extends Immutable {
-    //       constructor (...args) {
-    //         super(...args)
-
-    //         if (new.target === ${name}) {
-    //           Object.freeze(this)
-    //         }
-    //       }
-    //     }`)(Immutable)
-    //   } catch (e) {
-    //     if (e.message.indexOf('Unexpected') > -1) {
-    //       throw new Error(`The name, '${name}', has characters that aren't compatible with JavaScript class names: ${e.message}`)
-    //     }
-
-    //     throw e
-    //   }
-    // }
-
-    // const makeValidatableImmutable = (bp, name) => {
-
-    // }
-
-    // const ValidatedImmutable = class extends Immutable {
-    //   constructor (input) {
-    //     const validationResult = bp.validate(input)
-
-    //     if (validationResult.err) {
-    //       throw validationResult.err
-    //     }
-
-    //     super(input)
-
-    //     if (new.target === ValidatedImmutable) {
-    //       Object.freeze(this)
-    //     }
-    //   }
-    // }
-
     /**
-     *
+     * Creates a new object from the given, `that`, and overwrites properties
+     * on it with the given, `input`
      * @curried
-     * @param {any} that
-     * @param {any} input
+     * @param {any} that - the object being patched
+     * @param {any} input - the properties being written
      */
     const patch = (that) => (input) => {
       const output = Object.assign({}, that)
@@ -113,94 +113,29 @@ module.exports = {
     }
 
     /**
-     * Creates a blueprint and returns a function for creating new instances
-     * of objects that get validated against the given blueprint. All of the
-     * properties on the returned value are immutable
+     * Creates a new object from the given, `that`, and overwrites properties
+     * on it with the given, `input`
      * @curried
-     * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
-     * @param {object} schema - the blueprint schema
+     * @param {any} that - the object being patched
+     * @param {any} input - the properties being written
      */
-    const immutable = (name, schema) => {
-      let bpName, bp
+    const toObject = (that) => {
+      const shallowClone = Object.assign({}, that)
+      const output = {}
 
-      if (is.object(name) && is.string(name.name) && is.function(name.validate)) {
-        // a blueprint was passed as the first argument
-        bp = name
-        bpName = name.name
-      } else {
-        bp = blueprint(name, schema)
-        bpName = name
-      }
-
-      if (bp.err) {
-        throw bp.err
-      }
-
-      try {
-        // make sure the blueprint name is class-name-compatible
-        //
-        // eslint-disable-next-line no-eval
-        eval(`class ${bpName} {}`)
-      } catch (e) {
-        if (e.message.indexOf('Unexpected') > -1) {
-          throw new Error(`The name, '${bpName}', has characters that aren't compatible with JavaScript class names: ${e.message}`)
+      Object.keys(shallowClone).forEach((key) => {
+        if (typeof shallowClone[key].toObject === 'function') {
+          output[key] = shallowClone[key].toObject()
+        } else if (is.array(shallowClone[key])) {
+          output[key] = Object.assign([], shallowClone[key])
+        } else if (is.object(shallowClone[key])) {
+          output[key] = Object.assign({}, shallowClone[key])
+        } else {
+          output[key] = shallowClone[key]
         }
-      }
+      })
 
-      /**
-       * Validates, and then freezes an object, and all of it's values, recursively
-       * @param {object} input - the object to freeze
-       */
-      const ValidatedImmutable = class extends Immutable {
-        constructor (input) {
-          const validationResult = bp.validate(input)
-
-          if (validationResult.err) {
-            throw validationResult.err
-          }
-
-          super(input)
-
-          if (new.target === ValidatedImmutable) {
-            Object.freeze(this)
-          }
-        }
-
-        patch (input) {
-          return new ValidatedImmutable(patch(this)(input))
-        }
-      }
-
-      return ValidatedImmutable
-      // try {
-      //   // class names don't allow special characters, nor executable JS
-      //   // so it should be safe to use eval here, as long as we limit
-      //   // the variables to the class name. This returns a class with the
-      //   // $name property, so TypeErrors indicate the correct class name
-      //   //
-      //   // TODO: should we accept config that doesn't use eval, and just returns ValidatedImmutable?
-      //   //
-      //   // eslint-disable-next-line no-eval
-      //   return eval(`(ValidatedImmutable) => class ${bpName} extends ValidatedImmutable {
-      //     constructor (...args) {
-      //       super(...args)
-
-      //       if (new.target === ${bpName}) {
-      //         Object.freeze(this)
-      //       }
-      //     }
-
-      //     patch (input) {
-      //       return new ${bpName}(patch(this)(input))
-      //     }
-      //   }`)(ValidatedImmutable)
-      // } catch (e) {
-      //   if (e.message.indexOf('Unexpected') > -1) {
-      //     throw new Error(`The name, '${bpName}', has characters that aren't compatible with JavaScript class names: ${e.message}`)
-      //   }
-
-      //   throw e
-      // }
+      return output
     }
 
     const push = (arr) => (newEntry) => {
@@ -239,8 +174,47 @@ module.exports = {
       return [ ...arr ]
     }
 
+    function ImmutableInstance (config) {
+      config = { ...{ Validator }, ...config }
+
+      /**
+       * Creates a blueprint and returns a function for creating new instances
+       * of objects that get validated against the given blueprint. All of the
+       * properties on the returned value are immutable
+       * @curried
+       * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
+       * @param {object} schema - the blueprint schema
+       */
+      return (name, schema) => {
+        const validator = new config.Validator(name, schema)
+
+        /**
+         * Validates, and then freezes an object, and all of it's values, recursively
+         * @param {object} input - the object to freeze
+         */
+        const ValidatedImmutable = class extends Immutable {
+          constructor (input) {
+            validator.validate(input)
+
+            super(input)
+
+            if (new.target === ValidatedImmutable) {
+              Object.freeze(this)
+            }
+          }
+
+          patch (input) {
+            return new ValidatedImmutable(patch(this)(input))
+          }
+        }
+
+        return ValidatedImmutable
+      }
+    }
+
     return {
-      immutable,
+      immutable: new ImmutableInstance(),
+      Immutable: ImmutableInstance,
       patch,
       array: (arr) => {
         return {
