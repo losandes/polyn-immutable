@@ -1,7 +1,7 @@
 const Ajv = require('ajv')
 
 module.exports = (test) => {
-  const { immutable, Immutable, blueprint } = test.sut
+  const { immutable, Immutable, blueprint, registerValidator } = test.sut
 
   // PREP ======================================================================
   const types = () => {
@@ -355,6 +355,29 @@ module.exports = (test) => {
           .to.throw(`blueprint requires a name {string}, and a schema {object}`)
       }
     }, // ctor without name
+    'when an immutable is constructed with a validator that intercepts values': {
+      when: () => {
+        registerValidator('productTypeWithDefault', ({ value }) => {
+          if (/^book|magazine$/.test(value)) {
+            return { value }
+          }
+
+          return { value: 'product' }
+        })
+        const Product = immutable('Product', {
+          type1: 'productTypeWithDefault',
+          type2: 'productTypeWithDefault'
+        })
+        return new Product({
+          type2: 'movie'
+        })
+      },
+      'it should use the intercepted values': (expect) => (err, actual) => {
+        expect(err).to.be.null
+        expect(actual.type1).to.equal('product')
+        expect(actual.type2).to.equal('product')
+      }
+    }, // value interception
     'when an immutable is patched': {
       when: () => {
         const Sut = immutable('PatchTest', makeModel())

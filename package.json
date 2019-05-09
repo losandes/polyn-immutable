@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node build.js",
     "test": "node test.js",
+    "test:ts": "tsc -p ./tsconfig.json && node test-ts.js",
     "watch": "nodemon -e js --exec 'node test.js --tap | tap-nyan'"
   },
   "repository": {
@@ -30,6 +31,7 @@
     "immutability"
   ],
   "devDependencies": {
+    "@types/chai": "~4.1.7",
     "ajv": "~6.10.0",
     "chai": "~4.2.0",
     "eslint": "~5.16.0",
@@ -38,7 +40,8 @@
     "eslint-plugin-node": "~8.0.1",
     "eslint-plugin-promise": "~4.1.1",
     "eslint-plugin-standard": "~4.0.0",
-    "supposed": "~0.2.0"
+    "supposed": "~0.2.0",
+    "typescript": "~3.4.5"
   },
   "dependencies": {
     "@polyn/blueprint": "~2.0.0"

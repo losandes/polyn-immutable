@@ -3,7 +3,6 @@ module.exports = {
   factory: (Blueprint) => {
     'use strict'
     const { is, blueprint } = Blueprint
-    const config = {}
 
     /**
      * Returns true if the object matches the (@polyn/blueprint).blueprint signature
@@ -43,6 +42,8 @@ module.exports = {
           if (validationResult.err) {
             throw validationResult.err
           }
+
+          return validationResult
         }
       }
     }
@@ -61,32 +62,6 @@ module.exports = {
           return val
         }
       }))
-    }
-
-    /**
-     * Freezes an object, and all of it's values, recursively
-     * @param {object} input - the object to freeze
-     */
-    const Immutable = class {
-      constructor (input) {
-        Object.keys(input).forEach((key) => {
-          if (is.array(input[key])) {
-            this[key] = freezeArray(input[key])
-          } else if (is.object(input[key])) {
-            this[key] = new Immutable(input[key])
-          } else {
-            this[key] = input[key]
-          }
-        })
-
-        if (new.target === Immutable) {
-          Object.freeze(this)
-        }
-      }
-
-      toObject () {
-        return toObject(this)
-      }
     }
 
     /**
@@ -174,13 +149,40 @@ module.exports = {
       return [ ...arr ]
     }
 
+    /**
+     * Freezes an object, and all of it's values, recursively
+     * @param {object} input - the object to freeze
+     */
+    const Immutable = class {
+      constructor (input) {
+        Object.keys(input).forEach((key) => {
+          if (is.array(input[key])) {
+            this[key] = freezeArray(input[key])
+          } else if (is.object(input[key])) {
+            this[key] = new Immutable(input[key])
+          } else {
+            this[key] = input[key]
+          }
+        })
+
+        if (new.target === Immutable) {
+          Object.freeze(this)
+        }
+      }
+
+      toObject () {
+        return toObject(this)
+      }
+    }
+
     function ImmutableInstance (config) {
       config = { ...{ Validator }, ...config }
 
       /**
-       * Creates a blueprint and returns a function for creating new instances
-       * of objects that get validated against the given blueprint. All of the
-       * properties on the returned value are immutable
+       * Creates a Validator (@polyn/blueprint by default) and returns a
+       * function for creating new instances of objects that get validated
+       * against the given schema. All of the properties on the returned
+       * value are immutable
        * @curried
        * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
        * @param {object} schema - the blueprint schema
@@ -194,9 +196,9 @@ module.exports = {
          */
         const ValidatedImmutable = class extends Immutable {
           constructor (input) {
-            validator.validate(input)
+            const result = validator.validate(input)
 
-            super(input)
+            super((result && result.value) || input)
 
             if (new.target === ValidatedImmutable) {
               Object.freeze(this)

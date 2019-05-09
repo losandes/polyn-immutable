@@ -147,10 +147,13 @@ function Validator (name, schema) {
   return {
     validate: (input) => {
       // throw if invalid
+      // optionally: return { value: { /*...*/ } }
     }
   }
 }
 ```
+
+> If your validate function returns an object with a `value` property, the `value` will be used instead of the input to construct the immutable instance. This allows you to set defaults, and intercept values, if necessary
 
 In the following example, we'll use [ajv](https://github.com/epoberezkin/ajv) to validate JSON Schemas.
 
