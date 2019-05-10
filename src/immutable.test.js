@@ -269,7 +269,7 @@ module.exports = (test) => {
       },
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
-        expect(err.message).to.equal('Invalid invalidInputTest: invalidInputTest.requiredString {string} is invalid, invalidInputTest.optionalString {string} is invalid')
+        expect(err.message).to.equal('Invalid invalidInputTest: expected `requiredString` {null} to be {string}, expected `optionalString` {number} to be {string}')
       }
     }, // invalid input
     'when an immutable is constructed with null input': {
@@ -283,7 +283,7 @@ module.exports = (test) => {
       },
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
-        expect(err.message).to.equal('Invalid nullInputTest: nullInputTest.requiredString {string} is invalid')
+        expect(err.message).to.equal('Invalid nullInputTest: expected `requiredString` {null} to be {string}')
       }
     }, // null input
     'when an immutable is constructed with a valid null value in the input': {
@@ -709,7 +709,7 @@ module.exports = (test) => {
          */
         function AjvValidator (name, schema) {
           const makeErrorText = (errors) => {
-            return errors
+            return errors && errors
               .map((error) => `${name}${error.dataPath} ${error.message}`)
               .join(', ')
           }

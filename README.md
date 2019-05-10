@@ -153,7 +153,7 @@ function Validator (name, schema) {
 }
 ```
 
-> If your validate function returns an object with a `value` property, the `value` will be used instead of the input to construct the immutable instance. This allows you to set defaults, and intercept values, if necessary
+> If your validate function returns an object with a `value` property, the `value` will be used instead of the input to construct the immutable instance. This allows you to set defaults, and intercept values
 
 In the following example, we'll use [ajv](https://github.com/epoberezkin/ajv) to validate JSON Schemas.
 
@@ -168,7 +168,7 @@ const { Immutable } = require('@polyn/immutable')
  */
 function AjvValidator (name, schema) {
   const makeErrorText = (errors) => {
-    return errors
+    return errors && errors
       .map((error) => `${name}${error.dataPath} ${error.message}`)
       .join(', ')
   }
@@ -235,6 +235,32 @@ try {
 ```
 
 > NOTE this implementation isn't the fastest approach to using ajv, but it avoids collisions on the `ajv.errors` singleton
+
+## TypeScript Support
+This library exports types. A brief example is show here. If you'd like to see more, the examples above are implemented in TypeScript in [test-ts.ts](./test-ts.ts).
+
+```TypeScript
+import { array, immutable, Immutable, IValidatedImmutable } from './index';
+import { gt } from '@polyn/blueprint'
+
+export interface IPerson extends IValidatedImmutable<IPerson> {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly age: number;
+}
+
+export const Person = immutable<IPerson>('Person', {
+  firstName: 'string',
+  lastName: 'string',
+  age: gt(0)
+})
+
+const person: IPerson = new Person({
+  firstName: 'John',
+  lastName: 'Doe',
+  age: 21
+})
+```
 
 ## Why @polyn/immutable
 This won't be a case for immutability - that's been made many times, elsewhere. Why use _this_ library for immutability instead of another one?
