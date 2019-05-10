@@ -184,7 +184,7 @@ This library uses `Object.freeze` to make objects immutable, so it shares the be
 >
 > -- [MDN: Object.freeze()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze)
 
-## Scope
+## Scope (It's not Managed)
 While strict mode will help us identify cases where we attempt to mutate an object, JavaScript scope provides some avenues to possible confusion, and limitations we chose for this library.
 
 For instance, what happens when we mutate a value that was originally defined outside of the scope of an immutable? What about mutable scope that is managed inside of a function that is attached to an immutable (i.e. _getters_ and _setters_)? The expected behavior is illustrated below:
