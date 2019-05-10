@@ -34,30 +34,31 @@ console.log(person);
 // prints { firstName: 'John', lastName: 'Doe', age: 21 }
 console.log(modified2);
 // prints { firstName: 'John', lastName: 'Doe', age: 22 }
-// inheritance
+// Polymorphism
 // =============================================================================
-class Poly1 {
+// Plain TypeScript Sub-Class Polymorphism
+class Poly {
     constructor(input) {
         this.prop1 = input.prop1;
     }
 }
-class SubPoly1 extends Poly1 {
+class SubPoly extends Poly {
     constructor(input) {
         super(input);
         this.prop2 = input.prop2;
     }
 }
-const Poly2 = index_1.immutable('Poly', {
+const Polyn = index_1.immutable('Polyn', {
     prop1: 'string'
 });
-class SubPoly2 extends Poly2 {
+class SubPolyn extends Polyn {
     constructor(input) {
         super(input);
         this.prop2 = input.prop2;
     }
 }
-console.log(new SubPoly1({ prop1: 'sub-class', prop2: 'polymorphism' }));
-console.log(new SubPoly2({ prop1: 'sub-class', prop2: 'polymorphism' }));
+console.log(new SubPoly({ prop1: 'sub-class', prop2: 'polymorphism' }));
+console.log(new SubPolyn({ prop1: 'sub-class', prop2: 'polymorphism' }));
 // custom Validator
 // =============================================================================
 /**

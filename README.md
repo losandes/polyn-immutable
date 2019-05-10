@@ -61,7 +61,50 @@ try {
 }
 ```
 
-### Patch
+### Browser
+
+```Shell
+$ npm install --save @polyn/immutable
+```
+
+```HTML
+<script src="./node_modules/@polyn/blueprint/dist/blueprint.min.js" />
+<script src="./node_modules/@polyn/immutable/dist/immutable.min.js" />
+<script>
+  ((immutable) => {
+    'use strict';
+
+    const Product = immutable('Product', {
+      id: 'string',
+      title: 'string',
+      description: 'string',
+      price: 'decimal:2',
+      type: /^book|magazine|card$/,
+      metadata: {
+        keywords: 'string[]',
+        isbn: 'string?'
+      }
+    })
+
+    const product = new Product({
+      id: '5623c1263b952eb796d79e03',
+      title: 'Swamplandia',
+      description: 'From the celebrated...',
+      price: 9.99,
+      type: 'book',
+      metadata: {
+        keywords: ['swamp'],
+        isbn: '0-307-26399-1'
+      }
+    })
+
+    console.log(product)
+    // prints: ValidatedImmutable { id: '5623c1263b952eb796d79e03', ... }
+  })(window.polyn.immutable.immutable)
+</script>
+```
+
+## Updating Models With `patch`
 The objects that immutable creates include `patch` on their prototype (it's not enumerable; doesn't show up in `Object.keys`). This function accepts an object, and will produce a new instance, favoring the values in that object over the existing values (like PATCH in REST).
 
 ```JavaScript
@@ -91,7 +134,7 @@ console.log(modified)
 // prints { firstName: 'John', lastName: 'Doe', age: 22 }
 ```
 
-### Mutability
+## Updating Models With `toObject`
 Sometimes it's easier to make a copy, modify it, and then create a new instance ourselves, than it is to patch an existing instance. Here's how:
 
 ```JavaScript
@@ -131,6 +174,87 @@ This library uses `Object.freeze` to make objects immutable, so it shares the be
 > Nothing can be added to or removed from the properties set of a frozen object. Any attempt to do so will fail, either silently or by throwing a [TypeError](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypeError) exception (most commonly, but not exclusively, when in [strict mode](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode)).
 >
 > -- [MDN: Object.freeze()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/freeze)
+
+## Scope
+While strict mode will help us identify cases where we attempt to mutate an object, JavaScript scope provides some avenues to possible confusion, and limitations we chose for this library.
+
+For instance, what happens when we mutate a value that was originally defined outside of the scope of an immutable? What about mutable scope that is managed inside of a function that is attached to an immutable (i.e. _getters_ and _setters_)? The expected behavior is illustrated below:
+
+```JavaScript
+'use strict'
+
+// define an immutable
+const MakeNumber = immutable('MakeNumber', {
+  makeOne: 'function',
+  gettersAndSetters: {
+    immutableTwo: 'number',
+    get: 'function',
+    set: 'function'
+  },
+  one: 'number'
+})
+
+// define variables that meet the immutable's schema
+let makeOne = () => 1
+let makeTwo = () => {
+  let nonDeterministicNumber = 2
+
+  return {
+    immutableTwo: nonDeterministicNumber,
+    get: () => nonDeterministicNumber,
+    set: (num) => {
+      nonDeterministicNumber = num
+    }
+  }
+}
+let one = 1
+
+// create an instance of our immutable, using the variables
+// we defined above
+const makeNumber = new MakeNumber({
+  makeOne,
+  gettersAndSetters: makeTwo(),
+  one
+})
+
+// each of `makeNumber.makeOne()`, and `makeNumber.one` returns 1
+expect(makeNumber.makeOne()).to.equal(1)
+expect(makeNumber.one).to.equal(1)
+
+// each of `gettersAndSetters.immutableTwo`, and
+// `gettersAndSetters.get()` returns 2
+expect(makeNumber.gettersAndSetters.immutableTwo).to.equal(2)
+expect(makeNumber.gettersAndSetters.get()).to.equal(2)
+
+// mutate the original properties
+makeOne = () => 2
+one = 2
+// note that this doesn't throw
+// immutable doesn't mutate the values you pass to it
+
+// now, each of `makeOne()`, and `one` in this
+// immediate scope returns 2
+expect(makeOne()).to.equal(2)
+expect(one).to.equal(2)
+
+// however, each of the immutable `makeNumber.makeOne()`,
+// and `makeNumber.one` still returns 1
+expect(makeNumber.makeOne()).to.equal(1)
+expect(makeNumber.one).to.equal(1)
+
+// execute a function that mutates the inner scope of gettersAndSetters
+makeNumber.gettersAndSetters.set(3)
+
+// The immutable `makeNumber.gettersAndSetters.immutableTwo`
+// still returns 2 :yay:
+expect(makeNumber.gettersAndSetters.immutableTwo).to.equal(2)
+
+// but `makeNumber.gettersAndSetters.get()` now returns 3
+// because it's a factory that exposes non-deterministic inner scope
+expect(makeNumber.gettersAndSetters.get()).to.equal(3)
+```
+
+We have the option of allowing existing scope to be managed by the developer, or to fully clone all functions and manage them in this library. The latter is likely to produce more astonishment than the prior, so this library assumes you will manage your scopes. If you don't want inner scope to change, make it `immutable`, or simply don't change it (if you're using this library, there's a good chance you believe _getters_ and _setters_ are an anti-pattern anyway).
 
 ## Using JSON Schema or Other Validators
 You can register your own validator by creating a new instance of Immutable.

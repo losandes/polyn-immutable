@@ -97,7 +97,9 @@ module.exports = (test) => {
       },
       'it should return an instanceof ValidatedImmutable': (expect) => (err, Sut) => {
         expect(err).to.be.null
-        expect(Sut.prototype.constructor.name).to.equal('ValidatedImmutable')
+        const name = (Sut.prototype.constructor && Sut.prototype.constructor.name) ||
+          Sut.constructor.name
+        expect(name).to.equal('ValidatedImmutable')
       },
       'it should return a constructor': (expect) => (err, Sut) => {
         expect(err).to.be.null
@@ -246,7 +248,7 @@ module.exports = (test) => {
         actual.grandParent.parent.child.func = () => 2
         expect(actual.grandParent.parent.child.func()).to.equal(1)
       },
-      'it should freeze function references': (expect) => {
+      'it should clone functions defined in another scope': (expect) => {
         let func = () => 1
         const Immutable = immutable('functionReference', {
           func: 'function'
@@ -256,7 +258,7 @@ module.exports = (test) => {
         func = () => 2
         expect(actual.func()).to.equal(1)
       },
-      'it should freeze function references (strict mode doesn\'t throw)': (expect) => {
+      'it should clone functions defined in another scope (strict mode)': (expect) => {
         'use strict'
         let func = () => 1
         const Immutable = immutable('functionReference', {
@@ -265,6 +267,7 @@ module.exports = (test) => {
         const actual = new Immutable({ func })
         expect(actual.func()).to.equal(1)
         func = () => 2
+        expect(func()).to.equal(2)
         expect(actual.func()).to.equal(1)
       },
       'it should freeze the objects': (expect) => (err, when) => {
@@ -528,6 +531,157 @@ module.exports = (test) => {
         expect(actual.grandParent.parent.child.func()).to.equal(2)
       }
     }, // toObject
+    'when the scope of properties used to construct an instance of an immutable change ': {
+      when: () => {
+        const makeFixture = () => {
+          // define an immutable with a property that returns a function
+          const MakeNumber = immutable('MakeNumber', {
+            makeOne: 'function',
+            plusOne: 'number',
+            innerRef: 'string',
+            ref: 'function',
+            child: {
+              makeOne: 'function',
+              plusOne: 'number',
+              innerRef: 'string',
+              ref: 'function'
+            }
+          })
+
+          const makeFixture = function (num) {
+            let plusOne = num + 1
+            let innerRef = 'foo'
+
+            return {
+              makeOne: () => num,
+              plusOne,
+              innerRef,
+              mutate: () => {
+                plusOne = -1
+                innerRef = 'bar'
+              },
+              ref: () => {
+                return {
+                  makeOne: (() => num)(),
+                  plusOne,
+                  innerRef
+                }
+              }
+            }
+          }
+
+          const expectedBeforeMutation = {
+            makeOne: 1,
+            plusOne: 2,
+            innerRef: 'foo',
+            ref: {
+              makeOne: 1,
+              plusOne: 2,
+              innerRef: 'foo'
+            },
+            child: {
+              makeOne: 2,
+              plusOne: 3,
+              innerRef: 'foo',
+              ref: {
+                makeOne: 2,
+                plusOne: 3,
+                innerRef: 'foo'
+              }
+            }
+          }
+
+          const expectedAfterMutation = {
+            makeOne: 1,
+            plusOne: 2,
+            innerRef: 'foo',
+            ref: {
+              makeOne: 1,
+              plusOne: -1,
+              innerRef: 'bar'
+            },
+            child: {
+              makeOne: 2,
+              plusOne: 3,
+              innerRef: 'foo',
+              ref: {
+                makeOne: 2,
+                plusOne: -1,
+                innerRef: 'bar'
+              }
+            }
+          }
+
+          const parent = {
+            fixture: makeFixture(1)
+          }
+          parent.fixture.child = makeFixture(2)
+          const actual = new MakeNumber(parent.fixture)
+
+          return { parent, actual, expectedBeforeMutation, expectedAfterMutation }
+        }
+
+        return makeFixture
+      },
+      'make sure the fixture is in a good state to start': (expect) => (err, makeFixture) => {
+        'use strict'
+
+        expect(err).to.be.null
+
+        const { actual, expectedBeforeMutation } = makeFixture()
+
+        expect(actual.makeOne()).to.equal(expectedBeforeMutation.makeOne)
+        expect(actual.plusOne).to.equal(expectedBeforeMutation.plusOne)
+        expect(actual.innerRef).to.equal(expectedBeforeMutation.innerRef)
+        expect(actual.ref()).to.deep.equal(expectedBeforeMutation.ref)
+        expect(actual.child.makeOne()).to.equal(expectedBeforeMutation.child.makeOne)
+        expect(actual.child.plusOne).to.equal(expectedBeforeMutation.child.plusOne)
+        expect(actual.child.innerRef).to.equal(expectedBeforeMutation.child.innerRef)
+        expect(actual.child.ref()).to.deep.equal(expectedBeforeMutation.child.ref)
+      },
+      'the original state can change': (expect) => (err, makeFixture) => {
+        'use strict'
+
+        expect(err).to.be.null
+
+        const { parent, expectedAfterMutation } = makeFixture()
+
+        // mutate the state in the original scope
+        parent.fixture.mutate()
+        parent.fixture.child.mutate()
+
+        // it should change the original state
+        expect(parent.fixture.makeOne()).to.equal(expectedAfterMutation.makeOne)
+        expect(parent.fixture.plusOne).to.equal(expectedAfterMutation.plusOne)
+        expect(parent.fixture.innerRef).to.equal(expectedAfterMutation.innerRef)
+        expect(parent.fixture.ref()).to.deep.equal(expectedAfterMutation.ref)
+        expect(parent.fixture.child.makeOne()).to.equal(expectedAfterMutation.child.makeOne)
+        expect(parent.fixture.child.plusOne).to.equal(expectedAfterMutation.child.plusOne)
+        expect(parent.fixture.child.innerRef).to.equal(expectedAfterMutation.child.innerRef)
+        expect(parent.fixture.child.ref()).to.deep.equal(expectedAfterMutation.child.ref)
+      },
+      'references outside of the scope of the immutable are NOT broken - they CAN mutate': (expect) => (err, makeFixture) => {
+        'use strict'
+
+        expect(err).to.be.null
+
+        const { parent, actual, expectedAfterMutation } = makeFixture()
+
+        // mutate the state in the original scope
+        parent.fixture.mutate()
+        parent.fixture.child.mutate()
+
+        // references outside of the scope of the immutable are NOT broken - they CAN mutate
+        expect(actual.makeOne()).to.equal(expectedAfterMutation.makeOne)
+        expect(actual.plusOne).to.equal(expectedAfterMutation.plusOne)
+        expect(actual.innerRef).to.equal(expectedAfterMutation.innerRef)
+        expect(actual.ref()).to.deep.equal(expectedAfterMutation.ref)
+        expect(actual.child.makeOne()).to.equal(expectedAfterMutation.child.makeOne)
+        expect(actual.child.plusOne).to.equal(expectedAfterMutation.child.plusOne)
+        expect(actual.child.innerRef).to.equal(expectedAfterMutation.child.innerRef)
+        expect(actual.child.ref()).to.deep.equal(expectedAfterMutation.child.ref)
+      }
+    }, // scope
     'when a new `Immutable` is constructed/configured': {
       'it should let you set the Validator': (expect) => {
         const expected = {
@@ -756,6 +910,79 @@ module.exports = (test) => {
         // prints { firstName: 'John', lastName: 'Doe', age: 21 }
         console.log(modified)
         // prints { firstName: 'John', lastName: 'Doe', age: 22 }
+      },
+      'scope': (expect) => {
+        'use strict'
+
+        // define an immutable
+        const MakeNumber = immutable('MakeNumber', {
+          makeOne: 'function',
+          gettersAndSetters: {
+            immutableTwo: 'number',
+            get: 'function',
+            set: 'function'
+          },
+          one: 'number'
+        })
+
+        // define variables that meet the immutable's schema
+        let makeOne = () => 1
+        let makeTwo = () => {
+          let nonDeterministicNumber = 2
+
+          return {
+            immutableTwo: nonDeterministicNumber,
+            get: () => nonDeterministicNumber,
+            set: (num) => {
+              nonDeterministicNumber = num
+            }
+          }
+        }
+        let one = 1
+
+        // create an instance of our immutable, using the variables
+        // we defined above
+        const makeNumber = new MakeNumber({
+          makeOne,
+          gettersAndSetters: makeTwo(),
+          one
+        })
+
+        // each of `makeNumber.makeOne()`, and `makeNumber.one` returns 1
+        expect(makeNumber.makeOne()).to.equal(1)
+        expect(makeNumber.one).to.equal(1)
+
+        // each of `gettersAndSetters.immutableTwo`, and
+        // `gettersAndSetters.get()` returns 2
+        expect(makeNumber.gettersAndSetters.immutableTwo).to.equal(2)
+        expect(makeNumber.gettersAndSetters.get()).to.equal(2)
+
+        // mutate the original properties
+        makeOne = () => 2
+        one = 2
+        // note that this doesn't throw
+        // immutable doesn't mutate the values you pass to it
+
+        // now, each of `makeOne()`, and `one` in this
+        // immediate scope returns 2
+        expect(makeOne()).to.equal(2)
+        expect(one).to.equal(2)
+
+        // however, each of the immutable `makeNumber.makeOne()`,
+        // and `makeNumber.one` still returns 1
+        expect(makeNumber.makeOne()).to.equal(1)
+        expect(makeNumber.one).to.equal(1)
+
+        // execute the function that mutates the inner scope of makeTwo
+        makeNumber.gettersAndSetters.set(3)
+
+        // The immutable `makeNumber.gettersAndSetters.immutableTwo`
+        // still returns 2
+        expect(makeNumber.gettersAndSetters.immutableTwo).to.equal(2)
+
+        // but `makeNumber.gettersAndSetters.get()` now returns 3
+        // because it's a factory that exposes the inner scope
+        expect(makeNumber.gettersAndSetters.get()).to.equal(3)
       },
       '// ajv': () => {
         // const { Immutable } = require('@polyn/immutable')

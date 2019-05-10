@@ -10,6 +10,12 @@
     "test:ts": "tsc -p ./tsconfig.json && node test-ts.js",
     "watch": "nodemon -e js --exec 'node test.js --tap | tap-nyan'"
   },
+  "pre-commit": [
+    "build"
+  ],
+  "pre-push": [
+    "test"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/losandes/polyn-immutable.git"
@@ -31,6 +37,8 @@
     "immutability"
   ],
   "devDependencies": {
+    "@babel/core": "~7.4.4",
+    "@babel/preset-env": "~7.4.4",
     "@types/chai": "~4.1.7",
     "ajv": "~6.10.0",
     "chai": "~4.2.0",
