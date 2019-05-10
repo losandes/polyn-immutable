@@ -4,6 +4,15 @@ Define object schemas for validation, and construction of immutable objects. @po
 
 Unlike `Object.freeze`, @polyn/immutable acts on your objects recursively: nested objects are frozen, as well as the values inside arrays. It also addresses property injection: instances of `immutable` include only properties that exist on the schema.
 
+* [Getting Started with Node](#node)
+* [Getting Started with the Browser](#browser)
+* [Updating Models with `patch`](#updating-models-with-patch)
+* [Updating Models with `toObject`](#updating-models-with-toobject)
+* [The Importance of Strict Mode](#the-importance-of-strict-mode)
+* [Scope (It's not Managed)](#scope-its-not-managed)
+* [Using JSON Schema or Other Validators](#using-json-schema-or-other-validators)
+* [TypeScript Support](#typescript-support)
+
 ## Usage
 
 ### Node
