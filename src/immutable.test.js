@@ -4,86 +4,182 @@ module.exports = (test) => {
   const { immutable, Immutable, blueprint, registerValidator } = test.sut
 
   // PREP ======================================================================
-  const types = () => {
-    return {
-      requiredString: 'string',
-      optionalString: 'string?',
-      maybeNullString: 'string?',
-      maybeUndefinedString: 'string?',
-      date: 'date',
-      regex: 'regexp',
-      bool: 'boolean',
-      num: 'number',
-      decimal: 'decimal',
-      func: 'function',
-      arr: 'number[]',
-      objArr: 'any[]'
+  const { makeModel, makeOne, makeTwo } = (() => {
+    const types = () => {
+      return {
+        requiredString: 'string',
+        optionalString: 'string?',
+        maybeNullString: 'string?',
+        maybeUndefinedString: 'string?',
+        date: 'date',
+        regex: 'regexp',
+        bool: 'boolean',
+        num: 'number',
+        decimal: 'decimal',
+        func: 'function',
+        arr: 'number[]',
+        objArr: 'any[]'
+      }
     }
-  }
 
-  const oneValues = () => {
-    return {
-      requiredString: 'one',
-      optionalString: 'one',
-      maybeNullString: 'one',
-      maybeUndefinedString: 'one',
-      date: new Date('2019-05-04T00:00:00.000Z'),
-      regex: /[A-Z]/g,
-      bool: false,
-      num: 1,
-      decimal: 1.10,
-      func: () => 1,
-      arr: [1, 2, 3],
-      objArr: [{ one: 1 }, { two: 2 }, { three: 3 }]
+    const oneValues = () => {
+      return {
+        requiredString: 'one',
+        optionalString: 'one',
+        maybeNullString: 'one',
+        maybeUndefinedString: 'one',
+        date: new Date('2019-05-04T00:00:00.000Z'),
+        regex: /[A-Z]/g,
+        bool: false,
+        num: 1,
+        decimal: 1.10,
+        func: () => 1,
+        arr: [1, 2, 3],
+        objArr: [{ one: 1 }, { two: 2 }, { three: 3 }]
+      }
     }
-  }
 
-  const twoValues = () => {
-    return {
-      requiredString: 'two',
-      optionalString: 'two',
-      maybeNullString: null,
-      maybeUndefinedString: undefined,
-      date: new Date('2019-05-05T00:00:00.000Z'),
-      regex: /[1-9]/g,
-      bool: true,
-      num: 2,
-      decimal: 2.20,
-      func: () => 2,
-      arr: [4, 5, 6],
-      objArr: [{ four: 4 }, { five: 5 }, { six: 6 }]
+    const twoValues = () => {
+      return {
+        requiredString: 'two',
+        optionalString: 'two',
+        maybeNullString: null,
+        maybeUndefinedString: undefined,
+        date: new Date('2019-05-05T00:00:00.000Z'),
+        regex: /[1-9]/g,
+        bool: true,
+        num: 2,
+        decimal: 2.20,
+        func: () => 2,
+        arr: [4, 5, 6],
+        objArr: [{ four: 4 }, { five: 5 }, { six: 6 }]
+      }
     }
-  }
 
-  const makeModel = () => {
-    const model = types()
-    model.grandParent = types()
-    model.grandParent.parent = types()
-    model.grandParent.parent.child = types()
+    const makeModel = () => {
+      const model = types()
+      model.grandParent = types()
+      model.grandParent.parent = types()
+      model.grandParent.parent.child = types()
 
-    return model
-  }
+      return model
+    }
 
-  const makeOne = () => {
-    const one = oneValues()
-    one.grandParent = oneValues()
-    one.grandParent.parent = oneValues()
-    one.grandParent.parent.child = oneValues()
+    const makeOne = () => {
+      const one = oneValues()
+      one.grandParent = oneValues()
+      one.grandParent.parent = oneValues()
+      one.grandParent.parent.child = oneValues()
 
-    return one
-  }
+      return one
+    }
 
-  const makeTwo = () => {
-    const two = twoValues()
-    two.grandParent = twoValues()
-    two.grandParent.parent = twoValues()
-    two.grandParent.parent.child = twoValues()
+    const makeTwo = () => {
+      const two = twoValues()
+      two.grandParent = twoValues()
+      two.grandParent.parent = twoValues()
+      two.grandParent.parent.child = twoValues()
 
-    return two
-  }
+      return two
+    }
+
+    return { types, oneValues, twoValues, makeModel, makeOne, makeTwo }
+  })()
 
   // TEST ======================================================================
   return test('given `immutable`', {
+    'when initialized with a valid name': {
+      when: () => {
+        return immutable('Sut', {
+          requiredString: 'string',
+          optionalString: 'string?'
+        })
+      },
+      'it should return an instanceof ValidatedImmutable': (expect) => (err, Sut) => {
+        expect(err).to.be.null
+        expect(Sut.prototype.constructor.name).to.equal('ValidatedImmutable')
+      },
+      'it should return a constructor': (expect) => (err, Sut) => {
+        expect(err).to.be.null
+        const expected = {
+          requiredString: 'one',
+          optionalString: 'two'
+        }
+
+        expect(new Sut(expected)).to.deep.equal(expected)
+      }
+    }, // ctor valid name
+    'when initialized with an invalid name': {
+      when: () => {
+        const Sut = immutable(null, {
+          requiredString: 'string',
+          optionalString: 'string?'
+        })
+
+        return new Sut({
+          requiredString: null,
+          optionalString: 1
+        })
+      },
+      'it should throw': (expect) => (err) => {
+        expect(err).to.not.be.null
+        expect(err.message).to.equal('blueprint requires a name {string}, and a schema {object}')
+      }
+    }, // ctor invalid name
+    'when initialized with an existing blueprint': {
+      when: () => {
+        const Sut = immutable(blueprint('ConstructedWithBlueprint', {
+          str: 'string'
+        }))
+        const expected = {
+          str: 'hello'
+        }
+        const actual = new Sut(expected)
+
+        return { Sut, expected, actual }
+      },
+      'it should return the value': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { expected, actual } = when
+
+        expect(actual).to.deep.equal(expected)
+      }
+    }, // ctor existing blueprint
+    'when initialized with an invalid blueprint': {
+      'it should throw': (expect) => {
+        expect(() => { immutable('name', null) })
+          .to.throw('blueprint requires a name {string}, and a schema {object}')
+      }
+    }, // ctor invalid blueprint
+    'when initialized without a name': {
+      'it should throw': (expect) => {
+        expect(() => { immutable(null, { str: 'string' }) })
+          .to.throw(`blueprint requires a name {string}, and a schema {object}`)
+      }
+    }, // ctor without name
+    'when initialized with a validator that intercepts values': {
+      when: () => {
+        registerValidator('productTypeWithDefault', ({ value }) => {
+          if (/^book|magazine$/.test(value)) {
+            return { value }
+          }
+
+          return { value: 'product' }
+        })
+        const Product = immutable('Product', {
+          type1: 'productTypeWithDefault',
+          type2: 'productTypeWithDefault'
+        })
+        return new Product({
+          type2: 'movie'
+        })
+      },
+      'it should use the intercepted values': (expect) => (err, actual) => {
+        expect(err).to.be.null
+        expect(actual.type1).to.equal('product')
+        expect(actual.type2).to.equal('product')
+      }
+    }, // value interception
     'when an immutable is constructed with valid input': {
       when: () => {
         const Sut = immutable('Constructor', makeModel())
@@ -117,18 +213,6 @@ module.exports = (test) => {
           .to.throw(TypeError, 'Cannot assign to read only property')
         expect(() => { actual.grandParent.parent.child.requiredString = 'primitive-test' })
           .to.throw(TypeError, 'Cannot assign to read only property')
-      },
-      '// it should include the blueprint name in the TypeError (strict mode)': (expect) => (err, when) => {
-        'use strict'
-
-        expect(err).to.be.null
-        const { actual } = when
-
-        expect(() => { actual.requiredString = 'primitive-test' })
-          .to.throw(TypeError, '#<Sut>')
-
-        expect(() => { actual.grandParent.requiredString = 'primitive-test' })
-          .to.throw(TypeError, '#<Sut>')
       },
       'it should freeze the primitives, recursively': (expect) => (err, when) => {
         expect(err).to.be.null
@@ -255,6 +339,28 @@ module.exports = (test) => {
         expect(() => { delete actual.requiredString }).to.throw(TypeError, 'Cannot delete property')
       }
     }, // constructed with valid input
+    'when an immutable is constructed with an instance of another immutable': {
+      when: () => {
+        const Sut1 = immutable('doubleFreezeInputTest1', {
+          requiredString: 'string',
+          optionalString: 'string?'
+        })
+
+        const Sut2 = immutable('doubleFreezeInputTest2', {
+          requiredString: 'string'
+        })
+
+        const sut1 = new Sut1({ requiredString: 'one', optionalString: 'two' })
+        return {
+          expected: { requiredString: 'one' },
+          actual: new Sut2(sut1)
+        }
+      },
+      'it should return the value': (expect) => (err, { expected, actual }) => {
+        expect(err).to.be.null
+        expect(actual).to.deep.equal(expected)
+      }
+    }, // constructed with another immutable
     'when an immutable is constructed with invalid input': {
       when: () => {
         const Sut = immutable('invalidInputTest', {
@@ -286,6 +392,20 @@ module.exports = (test) => {
         expect(err.message).to.equal('Invalid nullInputTest: expected `requiredString` {null} to be {string}')
       }
     }, // null input
+    'when an immutable is constructed with undefined input': {
+      when: () => {
+        const Sut = immutable('undefinedInputTest', {
+          requiredString: 'string',
+          optionalString: 'string?'
+        })
+
+        return new Sut()
+      },
+      'it should throw': (expect) => (err) => {
+        expect(err).to.not.be.null
+        expect(err.message).to.equal('Invalid undefinedInputTest: expected `requiredString` {undefined} to be {string}')
+      }
+    }, // undefined input
     'when an immutable is constructed with a valid null value in the input': {
       when: () => {
         const Sut = immutable('nullInputTest', {
@@ -307,78 +427,29 @@ module.exports = (test) => {
         expect(actual).to.deep.equal(expected)
       }
     }, // null value in input
-    'when an immutable is constructed with an invalid name': {
+    'when an instance of an immutable is enumerated with Object.keys': {
       when: () => {
-        const Sut = immutable(null, {
-          requiredString: 'string',
-          optionalString: 'string?'
-        })
+        const Sut = immutable('prototypeKeys', { str: 'string', child: { str: 'string' } })
+        const sut = new Sut({ str: 'foo', child: { str: 'foo' } })
+        const parentKeys = Object.keys(sut)
+        const childKeys = Object.keys(sut.child)
 
-        return new Sut({
-          requiredString: null,
-          optionalString: 1
-        })
+        return { parentKeys, childKeys }
       },
-      'it should throw': (expect) => (err) => {
-        expect(err).to.not.be.null
-        expect(err.message).to.equal('blueprint requires a name {string}, and a schema {object}')
-      }
-    }, // ctor invalid name
-    'when an immutable is constructed with an existing blueprint': {
-      when: () => {
-        const Sut = immutable(blueprint('ConstructedWithBlueprint', {
-          str: 'string'
-        }))
-        const expected = {
-          str: 'hello'
-        }
-        const actual = new Sut(expected)
-
-        return { Sut, expected, actual }
-      },
-      'it should return the value': (expect) => (err, when) => {
+      'prototype functions should not show up': (expect) => (err, { parentKeys, childKeys }) => {
         expect(err).to.be.null
-        const { expected, actual } = when
+        expect(parentKeys.includes('patch')).to.equal(false)
+        expect(parentKeys.includes('toObject')).to.equal(false)
+        expect(parentKeys.indexOf('patch')).to.equal(-1)
+        expect(parentKeys.indexOf('toObject')).to.equal(-1)
 
-        expect(actual).to.deep.equal(expected)
+        expect(childKeys.includes('patch')).to.equal(false)
+        expect(childKeys.includes('toObject')).to.equal(false)
+        expect(childKeys.indexOf('patch')).to.equal(-1)
+        expect(childKeys.indexOf('toObject')).to.equal(-1)
       }
-    }, // ctor existing blueprint
-    'when an immutable is constructed with an invalid blueprint': {
-      'it should throw': (expect) => {
-        expect(() => { immutable('name', null) })
-          .to.throw('blueprint requires a name {string}, and a schema {object}')
-      }
-    }, // ctor invalid blueprint
-    'when an immutable is constructed without a name': {
-      'it should throw': (expect) => {
-        expect(() => { immutable(null, { str: 'string' }) })
-          .to.throw(`blueprint requires a name {string}, and a schema {object}`)
-      }
-    }, // ctor without name
-    'when an immutable is constructed with a validator that intercepts values': {
-      when: () => {
-        registerValidator('productTypeWithDefault', ({ value }) => {
-          if (/^book|magazine$/.test(value)) {
-            return { value }
-          }
-
-          return { value: 'product' }
-        })
-        const Product = immutable('Product', {
-          type1: 'productTypeWithDefault',
-          type2: 'productTypeWithDefault'
-        })
-        return new Product({
-          type2: 'movie'
-        })
-      },
-      'it should use the intercepted values': (expect) => (err, actual) => {
-        expect(err).to.be.null
-        expect(actual.type1).to.equal('product')
-        expect(actual.type2).to.equal('product')
-      }
-    }, // value interception
-    'when an immutable is patched': {
+    }, // prototype Object.keys
+    'when an instance of an immutable is `patch`ed': {
       when: () => {
         const Sut = immutable('PatchTest', makeModel())
         const expectedOriginal = makeOne()
@@ -407,7 +478,7 @@ module.exports = (test) => {
         expect(actualOriginal).to.deep.equal(expectedOriginal)
       }
     }, // patch
-    'when `toObject` is called': {
+    'when an instance of an immutable is cast `toObject`': {
       when: () => {
         const Sut = immutable('ToObjectTest', makeModel())
         const expected = makeOne()
@@ -457,23 +528,7 @@ module.exports = (test) => {
         expect(actual.grandParent.parent.child.func()).to.equal(2)
       }
     }, // toObject
-    'prototype functions should not show up as Object.keys': (expect) => {
-      const Sut = immutable('prototypeKeys', { str: 'string', child: { str: 'string' } })
-      const sut = new Sut({ str: 'foo', child: { str: 'foo' } })
-      const parentKeys = Object.keys(sut)
-      const childKeys = Object.keys(sut.child)
-
-      expect(parentKeys.includes('patch')).to.equal(false)
-      expect(parentKeys.includes('toObject')).to.equal(false)
-      expect(parentKeys.indexOf('patch')).to.equal(-1)
-      expect(parentKeys.indexOf('toObject')).to.equal(-1)
-
-      expect(childKeys.includes('patch')).to.equal(false)
-      expect(childKeys.includes('toObject')).to.equal(false)
-      expect(childKeys.indexOf('patch')).to.equal(-1)
-      expect(childKeys.indexOf('toObject')).to.equal(-1)
-    },
-    'when a new `Immutable` is constructed': {
+    'when a new `Immutable` is constructed/configured': {
       'it should let you set the Validator': (expect) => {
         const expected = {
           name: 'NewImmutable:Validator',
@@ -497,6 +552,7 @@ module.exports = (test) => {
         const Sut = immutable(expected.name, expected.schema)
         const sut = new Sut(expected.input)
 
+        expect(sut).to.not.be.null
         expect(actual.name).to.equal(expected.name)
         expect(actual.schema).to.deep.equal(expected.schema)
         expect(actual.input).to.deep.equal(expected.input)
@@ -566,11 +622,13 @@ module.exports = (test) => {
     '// benchmark': {
       when: () => {
         const times = 1000
+        const objects = []
+        const immutables = []
 
         const objStart = new Date().getTime()
 
         for (let i = 0; i < times; i += 1) {
-          makeOne()
+          objects.push(makeOne())
         }
 
         const objEnd = new Date().getTime()
@@ -580,7 +638,7 @@ module.exports = (test) => {
         const val = makeOne()
 
         for (let i = 0; i < times; i += 1) {
-          let one = new Sut(val)
+          immutables.push(new Sut(val))
         }
 
         const immutableEnd = new Date().getTime()
@@ -590,7 +648,7 @@ module.exports = (test) => {
           immutableDuration: immutableEnd - immutableStart
         }
       },
-      'compared to regular objects (note ~1/2+ the time is validation)': (expect) => (err, results) => {
+      'compared to regular objects (note ~1/2+ the time is blueprint validation)': (expect) => (err, results) => {
         expect(err).to.be.null
 
         console.log(`Duration for creating objects (ms): ${results.objDuration}`)
@@ -639,6 +697,7 @@ module.exports = (test) => {
               isbn: '0-307-26399-1'
             }
           })
+          console.log('SHOULD NOT GET HERE', product2)
         } catch (e) {
           console.log(e.message)
           // will print Invalid Product: Product.title {string} is invalid
@@ -765,6 +824,7 @@ module.exports = (test) => {
             lastName: 2,
             age: -1
           })
+          console.log('SHOULD NOT GET HERE', person2)
         } catch (e) {
           console.log(e.message)
           // prints ( `\` line breaks for readability):

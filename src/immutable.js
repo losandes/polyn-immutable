@@ -194,7 +194,7 @@ module.exports = {
          * Validates, and then freezes an object, and all of it's values, recursively
          * @param {object} input - the object to freeze
          */
-        const ValidatedImmutable = class extends Immutable {
+        class ValidatedImmutable extends Immutable {
           constructor (input) {
             const result = validator.validate(input)
 
@@ -207,6 +207,10 @@ module.exports = {
 
           patch (input) {
             return new ValidatedImmutable(patch(this)(input))
+          }
+
+          getSchema () {
+            return schema
           }
         }
 

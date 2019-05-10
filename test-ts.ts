@@ -9,7 +9,8 @@ export interface IPerson extends IValidatedImmutable<IPerson> {
   readonly age: number;
 }
 
-// immutable ===================================================================
+// immutable
+// =============================================================================
 export const Person = immutable<IPerson>('Person', {
   firstName: 'string',
   lastName: 'string',
@@ -25,14 +26,16 @@ const person: IPerson = new Person({
 console.log(person)
 // prints { firstName: 'John', lastName: 'Doe', age: 21 }
 
-// patch =======================================================================
+// patch
+// =============================================================================
 const modified = person.patch({ age: 22 })
 console.log(person)
 // prints { firstName: 'John', lastName: 'Doe', age: 21 }
 console.log(modified)
 // prints { firstName: 'John', lastName: 'Doe', age: 22 }
 
-// toObject ====================================================================
+// toObject
+// =============================================================================
 const mutable = person.toObject()
 mutable.age = 22
 const modified2 = new Person(mutable)
@@ -42,7 +45,50 @@ console.log(person)
 console.log(modified2)
 // prints { firstName: 'John', lastName: 'Doe', age: 22 }
 
-// custom Validator ============================================================
+// Polymorphism
+// =============================================================================
+
+// Plain TypeScript Sub-Class Polymorphism
+class Poly {
+  readonly prop1: string;
+
+  constructor (input: any) {
+    this.prop1 = input.prop1;
+  }
+}
+
+class SubPoly extends Poly {
+  readonly prop2: string;
+
+  constructor (input: any) {
+    super(input);
+    this.prop2 = input.prop2;
+  }
+}
+
+// Sub-Class Polymorphism with @polyn/immutable
+interface IPolyn extends IValidatedImmutable<IPolyn> {
+  readonly prop1: string;
+}
+
+const Polyn = immutable<IPolyn>('Polyn', {
+  prop1: 'string'
+})
+
+class SubPolyn extends Polyn {
+  readonly prop2: string;
+
+  constructor (input: any) {
+    super(input);
+    this.prop2 = input.prop2;
+  }
+}
+
+console.log(new SubPoly({ prop1: 'sub-class', prop2: 'polymorphism' }))
+console.log(new SubPolyn({ prop1: 'sub-class', prop2: 'polymorphism' }))
+
+// custom Validator
+// =============================================================================
 /**
  * Creates a validator that uses ajv to validate data against
  * the given JSON Schema
@@ -116,7 +162,8 @@ try {
   // Person.age should be >= 0
 }
 
-// array =======================================================================
+// array
+// =============================================================================
 const arr1 = [1, 2, 3]
 const arr2 = array(arr1).push(4)
 expect(arr1).to.deep.equal([1, 2, 3])

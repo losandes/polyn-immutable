@@ -4,7 +4,8 @@ const chai_1 = require("chai");
 const index_1 = require("./index");
 const blueprint_1 = require("@polyn/blueprint");
 const Ajv = require("ajv");
-// immutable ===================================================================
+// immutable
+// =============================================================================
 exports.Person = index_1.immutable('Person', {
     firstName: 'string',
     lastName: 'string',
@@ -17,13 +18,15 @@ const person = new exports.Person({
 });
 console.log(person);
 // prints { firstName: 'John', lastName: 'Doe', age: 21 }
-// patch =======================================================================
+// patch
+// =============================================================================
 const modified = person.patch({ age: 22 });
 console.log(person);
 // prints { firstName: 'John', lastName: 'Doe', age: 21 }
 console.log(modified);
 // prints { firstName: 'John', lastName: 'Doe', age: 22 }
-// toObject ====================================================================
+// toObject
+// =============================================================================
 const mutable = person.toObject();
 mutable.age = 22;
 const modified2 = new exports.Person(mutable);
@@ -31,7 +34,32 @@ console.log(person);
 // prints { firstName: 'John', lastName: 'Doe', age: 21 }
 console.log(modified2);
 // prints { firstName: 'John', lastName: 'Doe', age: 22 }
-// custom Validator ============================================================
+// inheritance
+// =============================================================================
+class Poly1 {
+    constructor(input) {
+        this.prop1 = input.prop1;
+    }
+}
+class SubPoly1 extends Poly1 {
+    constructor(input) {
+        super(input);
+        this.prop2 = input.prop2;
+    }
+}
+const Poly2 = index_1.immutable('Poly', {
+    prop1: 'string'
+});
+class SubPoly2 extends Poly2 {
+    constructor(input) {
+        super(input);
+        this.prop2 = input.prop2;
+    }
+}
+console.log(new SubPoly1({ prop1: 'sub-class', prop2: 'polymorphism' }));
+console.log(new SubPoly2({ prop1: 'sub-class', prop2: 'polymorphism' }));
+// custom Validator
+// =============================================================================
 /**
  * Creates a validator that uses ajv to validate data against
  * the given JSON Schema
@@ -99,7 +127,8 @@ catch (e) {
     // Person.lastName should be string, \
     // Person.age should be >= 0
 }
-// array =======================================================================
+// array
+// =============================================================================
 const arr1 = [1, 2, 3];
 const arr2 = index_1.array(arr1).push(4);
 chai_1.expect(arr1).to.deep.equal([1, 2, 3]);
