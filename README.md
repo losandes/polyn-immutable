@@ -1,8 +1,10 @@
 @polyn/immutable
 ================
-Define object schemas for validation, and construction of immutable objects. @polyn/immutable uses native JavaScript features (namely, `Object.freeze`) to make your objects immutable. It uses [@polyn/blueprint](https://github.com/losandes/polyn-blueprint) to validate the schemas that you define, and also supports custom validators if you prefer JSON Schemas.
+Define object schemas for validation, and construction of immutable objects. @polyn/immutable uses native JavaScript features (namely, `Object.freeze`) to make your objects immutable. It uses [@polyn/blueprint](https://github.com/losandes/polyn-blueprint) to validate the schemas that you define, and also supports custom validators (i.e. if you prefer JSON Schemas).
 
-Unlike `Object.freeze`, @polyn/immutable acts on your objects recursively: nested objects are frozen, as well as the values inside arrays. It also addresses property injection: instances of `immutable` include only properties that exist on the schema.
+Unlike `Object.freeze`, @polyn/immutable acts on your objects recursively: nested objects are frozen, as well as the values inside arrays.
+
+@polyn/immutable also mitigates parameter/property pollution attacks at the model level: instances of `immutable` include only properties that exist on the schema, and only if they meet the validation you expressed.
 
 * [Getting Started with Node](#node)
 * [Getting Started with the Browser](#browser)
@@ -370,10 +372,10 @@ try {
 > NOTE this implementation isn't the fastest approach to using ajv, but it avoids collisions on the `ajv.errors` singleton
 
 ## TypeScript Support
-This library exports types. A brief example is show here. If you'd like to see more, the examples above are implemented in TypeScript in [test-ts.ts](./test-ts.ts).
+This library exports types. A brief example is shown here. If you'd like to see more, the examples above are implemented in TypeScript in [examples-typescript.ts](./examples-typescript.ts).
 
 ```TypeScript
-import { array, immutable, Immutable, IValidatedImmutable } from './index';
+import { array, immutable, Immutable, IValidatedImmutable } from '@polyn/immutable';
 import { gt } from '@polyn/blueprint'
 
 export interface IPerson extends IValidatedImmutable<IPerson> {

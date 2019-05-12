@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { array, immutable, Immutable, IValidatedImmutable } from './index';
+import { array, immutable, Immutable, IValidatedImmutable } from './index'
 import { gt } from '@polyn/blueprint'
 import * as Ajv from 'ajv'
 

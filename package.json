@@ -1,20 +1,18 @@
 {
   "name": "@polyn/immutable",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Define object schema's for validation, and construction of immutable objects",
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
     "build": "node build.js",
-    "test": "node test.js",
-    "test:ts": "tsc -p ./tsconfig.json && node test-ts.js",
+    "pre-push": "npm test && node pre-push.js",
+    "test": "node test.js && npm run test:ts",
+    "test:ts": "tsc -p ./tsconfig.json && node examples-typescript.js",
     "watch": "nodemon -e js --exec 'node test.js --tap | tap-nyan'"
   },
-  "pre-commit": [
-    "build"
-  ],
   "pre-push": [
-    "test"
+    "pre-push"
   ],
   "repository": {
     "type": "git",
@@ -48,10 +46,11 @@
     "eslint-plugin-node": "~8.0.1",
     "eslint-plugin-promise": "~4.1.1",
     "eslint-plugin-standard": "~4.0.0",
+    "pre-push": "~0.1.1",
     "supposed": "~0.2.0",
     "typescript": "~3.4.5"
   },
   "dependencies": {
-    "@polyn/blueprint": "~2.0.2"
+    "@polyn/blueprint": "~2.0.4"
   }
 }
