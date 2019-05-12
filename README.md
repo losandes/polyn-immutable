@@ -14,6 +14,7 @@ Unlike `Object.freeze`, @polyn/immutable acts on your objects recursively: neste
 * [Scope (It's not Managed)](#scope-its-not-managed)
 * [Using JSON Schema or Other Validators](#using-json-schema-or-other-validators)
 * [TypeScript Support](#typescript-support)
+* [Cookbook](#cookbook)
 
 ## Usage
 
@@ -395,6 +396,77 @@ const person: IPerson = new Person({
   lastName: 'Doe',
   age: 21
 })
+```
+
+## Cookbook
+
+* [Schema Inheritance](#schema-inheritance)
+
+### Schema Inheritance
+
+```JavaScript
+const { blueprint, registerBlueprint } = require('@polyn/blueprint')
+const { immutable } = require('@polyn/immutable')
+
+const productBp = blueprint('Product', {
+  id: 'string',
+  title: 'string',
+  description: 'string',
+  price: 'decimal:2',
+  type: /^book|magazine|card$/,
+  metadata: {
+    keywords: 'string[]'
+  }
+})
+
+registerBlueprint('Author', {
+  firstName: 'string',
+  lastName: 'string'
+})
+
+const Product = immutable(productBp)
+const Book = immutable('Book', {
+  ...productBp.schema,
+  ...{
+    metadata: {
+      ...productBp.schema.metadata,
+      ...{
+        isbn: 'string',
+        authors: 'Author[]'
+      }
+    }
+  }
+})
+
+const product = new Product({
+  id: '5623c1263b952eb796d79e02',
+  title: 'Happy Birthday',
+  description: 'A birthday card',
+  price: 9.99,
+  type: 'card',
+  metadata: {
+    keywords: ['bday']
+  }
+})
+
+const book = new Book({
+  id: '5623c1263b952eb796d79e03',
+  title: 'Swamplandia',
+  description: 'From the celebrated...',
+  price: 9.99,
+  type: 'book',
+  metadata: {
+    keywords: ['swamp'],
+    isbn: '0-307-26399-1',
+    authors: [{
+      firstName: 'Karen',
+      lastName: 'Russell'
+    }]
+  }
+})
+
+console.log(product)
+console.log(book)
 ```
 
 ## Why @polyn/immutable

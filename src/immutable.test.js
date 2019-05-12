@@ -984,6 +984,70 @@ module.exports = (test) => {
         // because it's a factory that exposes the inner scope
         expect(makeNumber.gettersAndSetters.get()).to.equal(3)
       },
+      '// schema inheritance': () => {
+        const { blueprint, registerBlueprint } = require('@polyn/blueprint')
+        // const { immutable } = require('@polyn/immutable')
+
+        const productBp = blueprint('Product', {
+          id: 'string',
+          title: 'string',
+          description: 'string',
+          price: 'decimal:2',
+          type: /^book|magazine|card$/,
+          metadata: {
+            keywords: 'string[]'
+          }
+        })
+
+        registerBlueprint('Author', {
+          firstName: 'string',
+          lastName: 'string'
+        })
+
+        const Product = immutable(productBp)
+        const Book = immutable('Book', {
+          ...productBp.schema,
+          ...{
+            metadata: {
+              ...productBp.schema.metadata,
+              ...{
+                isbn: 'string',
+                authors: 'Author[]'
+              }
+            }
+          }
+        })
+
+        const product = new Product({
+          id: '5623c1263b952eb796d79e02',
+          title: 'Happy Birthday',
+          description: 'A birthday card',
+          price: 9.99,
+          type: 'card',
+          metadata: {
+            keywords: ['bday']
+          }
+        })
+
+        const book = new Book({
+          id: '5623c1263b952eb796d79e03',
+          title: 'Swamplandia',
+          description: 'From the celebrated...',
+          price: 9.99,
+          type: 'book',
+          metadata: {
+            keywords: ['swamp'],
+            isbn: '0-307-26399-1',
+            authors: [{
+              firstName: 'Karen',
+              lastName: 'Russell'
+            }]
+          }
+        })
+
+        console.log(product)
+        console.log(book)
+      },
       '// ajv': () => {
         // const { Immutable } = require('@polyn/immutable')
 
