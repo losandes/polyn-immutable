@@ -1,7 +1,7 @@
 const Ajv = require('ajv')
 
 module.exports = (test) => {
-  const { immutable, Immutable, blueprint, registerValidator } = test.sut
+  const { immutable, Immutable, blueprint, registerValidator, registerBlueprint } = test.sut
 
   // PREP ======================================================================
   const { makeModel, makeOne, makeTwo } = (() => {
@@ -529,6 +529,25 @@ module.exports = (test) => {
         expect(actual.grandParent.func()).to.equal(2)
         expect(actual.grandParent.parent.func()).to.equal(2)
         expect(actual.grandParent.parent.child.func()).to.equal(2)
+      },
+      'it should not throw on null values': (expect) => {
+        registerBlueprint('ToObjectNullTestBp', {
+          foo: 'string'
+        })
+        const Sut = immutable('ToObjectNullTest', {
+          foo: 'string',
+          bar: 'ToObjectNullTestBp?'
+        })
+        const expected = {
+          foo: 'hello',
+          bar: null
+        }
+        const sut = new Sut(expected)
+
+        expect(sut.toObject()).to.deep.equal({
+          foo: 'hello',
+          bar: null
+        })
       }
     }, // toObject
     'when the scope of properties used to construct an instance of an immutable change ': {

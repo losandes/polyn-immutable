@@ -155,7 +155,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         var shallowClone = Object.assign({}, that);
         var output = {};
         Object.keys(shallowClone).forEach(function (key) {
-          if (typeof shallowClone[key].toObject === 'function') {
+          if (shallowClone[key] && typeof shallowClone[key].toObject === 'function') {
             output[key] = shallowClone[key].toObject();
           } else if (is.array(shallowClone[key])) {
             output[key] = Object.assign([], shallowClone[key]);

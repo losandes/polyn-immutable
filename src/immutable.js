@@ -99,7 +99,7 @@ module.exports = {
       const output = {}
 
       Object.keys(shallowClone).forEach((key) => {
-        if (typeof shallowClone[key].toObject === 'function') {
+        if (shallowClone[key] && typeof shallowClone[key].toObject === 'function') {
           output[key] = shallowClone[key].toObject()
         } else if (is.array(shallowClone[key])) {
           output[key] = Object.assign([], shallowClone[key])
