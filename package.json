@@ -1,6 +1,6 @@
 {
   "name": "@polyn/immutable",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Define object schema's for validation, and construction of immutable objects",
   "main": "index.js",
   "types": "index.d.ts",
