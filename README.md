@@ -401,6 +401,7 @@ const person: IPerson = new Person({
 ## Cookbook
 
 * [Schema Inheritance](#schema-inheritance)
+* [Deep Equals With Functions](#deep-equals-with-functions)
 
 ### Schema Inheritance
 
@@ -467,6 +468,32 @@ const book = new Book({
 
 console.log(product)
 console.log(book)
+```
+
+### Deep Equals With Functions
+If you're are testing objects with deep-equals, if they have functions on them, they will fail. `toObject` has support for stripping functions away so you can test just the property values:
+
+```JavaScript
+const { expect } = 'chai'
+
+const Product = immutable('Product', {
+  id: 'number',
+  title: 'string',
+  getPrice: 'function'
+})
+
+const product1 = new Product({
+  id: 1,
+  title: 'foo'
+})
+
+const product2 = new Product({
+  id: 1,
+  title: 'foo'
+})
+
+expect(product1.toObject({ removeFunctions: true }))
+  .to.deep.equal(product2.toObject({ removeFunctions: true }))
 ```
 
 ## Why @polyn/immutable

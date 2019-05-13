@@ -94,17 +94,25 @@ module.exports = {
      * @param {any} that - the object being patched
      * @param {any} input - the properties being written
      */
-    const toObject = (that) => {
+    const toObject = (that, options) => {
       const shallowClone = Object.assign({}, that)
       const output = {}
+      const { removeFunctions } = {
+        ...{
+          removeFunctions: false
+        },
+        ...options
+      }
 
       Object.keys(shallowClone).forEach((key) => {
         if (shallowClone[key] && typeof shallowClone[key].toObject === 'function') {
-          output[key] = shallowClone[key].toObject()
+          output[key] = shallowClone[key].toObject(options)
         } else if (is.array(shallowClone[key])) {
           output[key] = Object.assign([], shallowClone[key])
         } else if (is.object(shallowClone[key])) {
           output[key] = Object.assign({}, shallowClone[key])
+        } else if (is.function(shallowClone[key]) && removeFunctions === true) {
+          // do nothing
         } else {
           output[key] = shallowClone[key]
         }
@@ -170,8 +178,8 @@ module.exports = {
         }
       }
 
-      toObject () {
-        return toObject(this)
+      toObject (options) {
+        return toObject(this, options)
       }
     }
 

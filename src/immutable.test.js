@@ -550,6 +550,26 @@ module.exports = (test) => {
         })
       }
     }, // toObject
+    'when an instance of an immutable is cast `toObject` with options': {
+      when: () => {
+        const Sut = immutable('ToObjectWithOptionsTest', makeModel())
+        const input = makeOne()
+        const sut = new Sut(input)
+        const expected = makeOne()
+        delete expected.func
+        delete expected.grandParent.func
+        delete expected.grandParent.parent.func
+        delete expected.grandParent.parent.child.func
+
+        return { expected, sut }
+      },
+      'and `removeFunctions` is true, it should return all of the values, except for functions': (expect) => (err, when) => {
+        expect(err).to.be.null
+        const { expected, sut } = when
+
+        expect(sut.toObject({ removeFunctions: true })).to.deep.equal(expected)
+      }
+    },
     'when the scope of properties used to construct an instance of an immutable change ': {
       when: () => {
         const makeFixture = () => {
