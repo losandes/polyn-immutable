@@ -6,7 +6,7 @@ import { IValueOrError } from '@polyn/blueprint';
 
 export interface IValidatedImmutable<T> {
   patch (input: any): T;
-  toObject (): any;
+  toObject (options?: { removeFunctions?: boolean }): any;
 }
 
 export interface IValidate {
