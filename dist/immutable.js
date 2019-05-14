@@ -102,23 +102,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         };
       }
       /**
-       * Freezes an array, and all of the array's values, recursively
-       * @param {array} input - the array to freeze
-       */
-
-
-      var freezeArray = function freezeArray(input) {
-        return Object.freeze(input.map(function (val) {
-          if (is.array(val)) {
-            return freezeArray(val);
-          } else if (is.object(val)) {
-            return new Immutable(val);
-          } else {
-            return val;
-          }
-        }));
-      };
-      /**
        * Creates a new object from the given, `that`, and overwrites properties
        * on it with the given, `input`
        * @curried
@@ -232,44 +215,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
           return _toConsumableArray(arr);
         };
       };
-      /**
-       * Freezes an object, and all of it's values, recursively
-       * @param {object} input - the object to freeze
-       */
-
-
-      var Immutable =
-      /*#__PURE__*/
-      function () {
-        function Immutable(input) {
-          var _this = this;
-
-          _classCallCheck(this, Immutable);
-
-          Object.keys(input).forEach(function (key) {
-            if (is.array(input[key])) {
-              _this[key] = freezeArray(input[key]);
-            } else if (is.object(input[key])) {
-              _this[key] = new Immutable(input[key]);
-            } else {
-              _this[key] = input[key];
-            }
-          });
-
-          if ((this instanceof Immutable ? this.constructor : void 0) === Immutable) {
-            Object.freeze(this);
-          }
-        }
-
-        _createClass(Immutable, [{
-          key: "toObject",
-          value: function toObject(options) {
-            return _toObject(this, options);
-          }
-        }]);
-
-        return Immutable;
-      }();
 
       function ImmutableInstance(config) {
         config = _objectSpread({}, {
@@ -285,12 +230,77 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
          * @param {object} schema - the blueprint schema
          */
 
-        return function (name, schema) {
+        return function (name, schema, options) {
           var validator = new config.Validator(name, schema);
+
+          var _functionsOnPrototype = _objectSpread({}, {
+            functionsOnPrototype: false
+          }, options),
+              functionsOnPrototype = _functionsOnPrototype.functionsOnPrototype; // NOTE the classes, and freezeArray are in here, so their
+          // prototypes don't cross-contaminate
+
+          /**
+           * Freezes an array, and all of the array's values, recursively
+           * @param {array} input - the array to freeze
+           */
+
+
+          var freezeArray = function freezeArray(input) {
+            return Object.freeze(input.map(function (val) {
+              if (is.array(val)) {
+                return freezeArray(val);
+              } else if (is.object(val)) {
+                return new Immutable(val);
+              } else {
+                return val;
+              }
+            }));
+          };
+          /**
+           * Freezes an object, and all of it's values, recursively
+           * @param {object} input - the object to freeze
+           */
+
+
+          var Immutable =
+          /*#__PURE__*/
+          function () {
+            function Immutable(input) {
+              var _this = this;
+
+              _classCallCheck(this, Immutable);
+
+              Object.keys(input).forEach(function (key) {
+                if (is.array(input[key])) {
+                  _this[key] = freezeArray(input[key]);
+                } else if (is.object(input[key])) {
+                  _this[key] = new Immutable(input[key]);
+                } else if (functionsOnPrototype && is.function(input[key])) {
+                  Immutable.prototype[key] = input[key];
+                } else {
+                  _this[key] = input[key];
+                }
+              });
+
+              if ((this instanceof Immutable ? this.constructor : void 0) === Immutable) {
+                Object.freeze(this);
+              }
+            }
+
+            _createClass(Immutable, [{
+              key: "toObject",
+              value: function toObject(options) {
+                return _toObject(this, options);
+              }
+            }]);
+
+            return Immutable;
+          }();
           /**
            * Validates, and then freezes an object, and all of it's values, recursively
            * @param {object} input - the object to freeze
            */
+
 
           var ValidatedImmutable =
           /*#__PURE__*/
