@@ -605,6 +605,11 @@ module.exports = (test) => {
         expect(sut.toObject({ removeFunctions: true })).to.deep.equal(expected)
       }
     },
+    'when an instance of an immutable has an array with instances of Immutable in it': {
+      '// it should not re-process them': () => {
+
+      }
+    },
     'when the scope of properties used to construct an instance of an immutable change ': {
       when: () => {
         const makeFixture = () => {
