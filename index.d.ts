@@ -38,7 +38,7 @@ export interface IArrayUtils {
  * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
  * @param {object} schema - the blueprint schema
  */
-export function immutable<T> (name: string, schema: any): new (...a: any[]) => any;
+export function immutable<T> (name: string, schema: any): new (...a: any[]) => T;
 
 /**
  * Create your own instance of `immutable`, passing in configuration, such as
@@ -49,7 +49,7 @@ export function immutable<T> (name: string, schema: any): new (...a: any[]) => a
  * @param {object} schema - the blueprint schema
  */
 export function Immutable (config: IConfig):
-  <T>(name: string, schema: any) => new (...a: any[]) => any;
+  <T>(name: string, schema: any) => new (...a: any[]) => T;
 
 /**
  * Use functions that normally mutate an array with immutable equivalents
