@@ -49,22 +49,6 @@ module.exports = {
     }
 
     /**
-     * Freezes an array, and all of the array's values, recursively
-     * @param {array} input - the array to freeze
-     */
-    const freezeArray = (input) => {
-      return Object.freeze(input.map((val) => {
-        if (is.array(val)) {
-          return freezeArray(val)
-        } else if (is.object(val)) {
-          return new Immutable(val)
-        } else {
-          return val
-        }
-      }))
-    }
-
-    /**
      * Creates a new object from the given, `that`, and overwrites properties
      * on it with the given, `input`
      * @curried
@@ -157,32 +141,6 @@ module.exports = {
       return [ ...arr ]
     }
 
-    /**
-     * Freezes an object, and all of it's values, recursively
-     * @param {object} input - the object to freeze
-     */
-    const Immutable = class {
-      constructor (input) {
-        Object.keys(input).forEach((key) => {
-          if (is.array(input[key])) {
-            this[key] = freezeArray(input[key])
-          } else if (is.object(input[key])) {
-            this[key] = new Immutable(input[key])
-          } else {
-            this[key] = input[key]
-          }
-        })
-
-        if (new.target === Immutable) {
-          Object.freeze(this)
-        }
-      }
-
-      toObject (options) {
-        return toObject(this, options)
-      }
-    }
-
     function ImmutableInstance (config) {
       config = { ...{ Validator }, ...config }
 
@@ -195,8 +153,61 @@ module.exports = {
        * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
        * @param {object} schema - the blueprint schema
        */
-      return (name, schema) => {
+      return (name, schema, options) => {
         const validator = new config.Validator(name, schema)
+        const { functionsOnPrototype } = {
+          ...{
+            functionsOnPrototype: false
+          },
+          ...options
+        }
+
+        // NOTE the classes, and freezeArray are in here, so their
+        // prototypes don't cross-contaminate
+
+        /**
+         * Freezes an array, and all of the array's values, recursively
+         * @param {array} input - the array to freeze
+         */
+        const freezeArray = (input) => {
+          return Object.freeze(input.map((val) => {
+            if (is.array(val)) {
+              return freezeArray(val)
+            } else if (is.object(val)) {
+              return new Immutable(val)
+            } else {
+              return val
+            }
+          }))
+        }
+
+        /**
+         * Freezes an object, and all of it's values, recursively
+         * @param {object} input - the object to freeze
+         */
+        const Immutable = class {
+          constructor (input) {
+            Object.keys(input).forEach((key) => {
+              if (is.array(input[key])) {
+                this[key] = freezeArray(input[key])
+              } else if (is.object(input[key])) {
+                this[key] = new Immutable(input[key])
+              } else if (functionsOnPrototype && is.function(input[key])) {
+                Immutable.prototype[key] = input[key]
+              } else {
+                this[key] = input[key]
+              }
+            })
+
+            if (new.target === Immutable) {
+              Object.freeze(this)
+            }
+          }
+
+          toObject (options) {
+            return toObject(this, options)
+          }
+        }
 
         /**
          * Validates, and then freezes an object, and all of it's values, recursively

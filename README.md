@@ -15,6 +15,9 @@ Unlike `Object.freeze`, @polyn/immutable acts on your objects recursively: neste
 * [Using JSON Schema or Other Validators](#using-json-schema-or-other-validators)
 * [TypeScript Support](#typescript-support)
 * [Cookbook](#cookbook)
+  * [Using JSON Schema with AJV](#using-json-schema-with-ajv)
+  * [Schema Inheritance](#schema-inheritance)
+  * [Deep Equals With Functions](#deep-equals-with-functions)
 
 ## Usage
 
@@ -269,9 +272,10 @@ expect(makeNumber.gettersAndSetters.get()).to.equal(3)
 We have the option of allowing existing scope to be managed by the developer, or to fully clone all functions and manage them in this library. The latter is likely to produce more astonishment than the prior, so this library assumes you will manage your scopes. If you don't want inner scope to change, make it `immutable`, or simply don't change it (if you're using this library, there's a good chance you believe _getters_ and _setters_ are an anti-pattern anyway).
 
 ## Using JSON Schema or Other Validators
-You can register your own validator by creating a new instance of Immutable.
 
-The syntax for defining your own validator is:
+> Also see the [Using JSON Schema with AJV](#using-json-schema-with-ajv) example
+
+You can register your own validator by creating a new instance of Immutable. The syntax for defining your own validator is:
 
 ```JavaScript
 /**
@@ -291,6 +295,39 @@ function Validator (name, schema) {
 
 > If your validate function returns an object with a `value` property, the `value` will be used instead of the input to construct the immutable instance. This allows you to set defaults, and intercept values
 
+## TypeScript Support
+This library exports types. A brief example is shown here. If you'd like to see more, the examples above are implemented in TypeScript in [examples-typescript.ts](./examples-typescript.ts).
+
+```TypeScript
+import { array, immutable, Immutable, IValidatedImmutable } from '@polyn/immutable';
+import { gt } from '@polyn/blueprint'
+
+export interface IPerson extends IValidatedImmutable<IPerson> {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly age: number;
+}
+
+export const Person = immutable<IPerson>('Person', {
+  firstName: 'string',
+  lastName: 'string',
+  age: gt(0)
+})
+
+const person: IPerson = new Person({
+  firstName: 'John',
+  lastName: 'Doe',
+  age: 21
+})
+```
+
+## Cookbook
+
+* [Using JSON Schema with AJV](#using-json-schema-with-ajv)
+* [Schema Inheritance](#schema-inheritance)
+* [Deep Equals With Functions](#deep-equals-with-functions)
+
+### Using JSON Schema with AJV
 In the following example, we'll use [ajv](https://github.com/epoberezkin/ajv) to validate JSON Schemas.
 
 ```JavaScript
@@ -372,37 +409,6 @@ try {
 
 > NOTE this implementation isn't the fastest approach to using ajv, but it avoids collisions on the `ajv.errors` singleton
 
-## TypeScript Support
-This library exports types. A brief example is shown here. If you'd like to see more, the examples above are implemented in TypeScript in [examples-typescript.ts](./examples-typescript.ts).
-
-```TypeScript
-import { array, immutable, Immutable, IValidatedImmutable } from '@polyn/immutable';
-import { gt } from '@polyn/blueprint'
-
-export interface IPerson extends IValidatedImmutable<IPerson> {
-  readonly firstName: string;
-  readonly lastName: string;
-  readonly age: number;
-}
-
-export const Person = immutable<IPerson>('Person', {
-  firstName: 'string',
-  lastName: 'string',
-  age: gt(0)
-})
-
-const person: IPerson = new Person({
-  firstName: 'John',
-  lastName: 'Doe',
-  age: 21
-})
-```
-
-## Cookbook
-
-* [Schema Inheritance](#schema-inheritance)
-* [Deep Equals With Functions](#deep-equals-with-functions)
-
 ### Schema Inheritance
 
 ```JavaScript
@@ -471,29 +477,66 @@ console.log(book)
 ```
 
 ### Deep Equals With Functions
-If you're are testing objects with deep-equals, if they have functions on them, they will fail. `toObject` has support for stripping functions away so you can test just the property values:
+Sometimes, your schema might have a type that returns a function:
+
+```JavaScript
+const Product = immutable('Product', {
+  type: /^book$/i,
+  comparableType: ({ input }) => {
+    return {
+      value: () => input.toLowerCase()
+    }
+  }
+})
+```
+
+@polyn/immutable could put this function on `Product`s prototype so the are comparable with deep equals, but this can lead to astonishing outputs because the scope of the function would be different than the other properties. Instead, there are two ways to make instances of ValidatedImmutable comparable when they have functions on them.
+
+#### Functions on the Prototype
+If all of the functions on the object are safe to be put on the prototype, you can set the `functionsOnPrototype` option to do that when you defined the schema:
 
 ```JavaScript
 const { expect } = 'chai'
+const { immutable } = require('@polyn/immutable')
 
 const Product = immutable('Product', {
-  id: 'number',
-  title: 'string',
-  getPrice: 'function'
+  type: /^book$/i,
+  comparableType: ({ input }) => {
+    return {
+      value: () => input.toLowerCase()
+    }
+  }
+}, { functionsOnPrototype: true })
+
+const p1 = new Product({ type: 'book' })
+const p2 = new Product({ type: 'book' })
+
+expect(p1).to.deep.equal(p2)
+```
+
+> Remember - the prototype is shared across ALL INSTANCES of `Product` in this example. If your functions act on non-deterministic values they may produce side-effects that effect all instances.
+
+#### Cast to Object Without Functions
+If you don't want functions to be on the prototype, you can instead pass the `removeFunctions` option to `toObjects` in order to compare:
+
+```JavaScript
+const { expect } = 'chai'
+const { immutable } = require('@polyn/immutable')
+
+const Product = immutable('Product', {
+  type: /^book$/i,
+  comparableType: ({ input }) => {
+    return {
+      value: () => input.toLowerCase()
+    }
+  }
 })
 
-const product1 = new Product({
-  id: 1,
-  title: 'foo'
-})
+const p1 = new Product({ type: 'book' })
+const p2 = new Product({ type: 'book' })
 
-const product2 = new Product({
-  id: 1,
-  title: 'foo'
-})
-
-expect(product1.toObject({ removeFunctions: true }))
-  .to.deep.equal(product2.toObject({ removeFunctions: true }))
+expect(p1.toObject({ removeFunctions: true }))
+  .to.deep.equal(p2.toObject({ removeFunctions: true }))
 ```
 
 ## Why @polyn/immutable
