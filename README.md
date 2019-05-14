@@ -493,7 +493,6 @@ const Product = immutable('Product', {
 @polyn/immutable could put this function on `Product`s prototype so the are comparable with deep equals, but this can lead to astonishing outputs because the scope of the function would be different than the other properties. Instead, there are two ways to make instances of ValidatedImmutable comparable when they have functions on them.
 
 #### Functions on the Prototype
-
 If all of the functions on the object are safe to be put on the prototype, you can set the `functionsOnPrototype` option to do that when you defined the schema:
 
 ```JavaScript
@@ -515,8 +514,10 @@ const p2 = new Product({ type: 'book' })
 expect(p1).to.deep.equal(p2)
 ```
 
+> Remember - the prototype is shared across ALL INSTANCES of `Product` in this example. If your functions act on non-deterministic values they may produce side-effects that effect all instances.
+
 #### Cast to Object Without Functions
-If you don't want functions to be on the prototype, you can instead pass the `removeFunctions` option to `toObjects`:
+If you don't want functions to be on the prototype, you can instead pass the `removeFunctions` option to `toObjects` in order to compare:
 
 ```JavaScript
 const { expect } = 'chai'
