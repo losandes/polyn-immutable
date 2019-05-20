@@ -1,7 +1,7 @@
 const Ajv = require('ajv')
 
 module.exports = (test) => {
-  const { immutable, Immutable, blueprint, registerValidator, registerBlueprint } = test.sut
+  const { immutable, PolynImmutable, blueprint, registerValidator, registerBlueprint } = test.sut
 
   // PREP ======================================================================
   const { makeModel, makeOne, makeTwo } = (() => {
@@ -285,10 +285,10 @@ module.exports = (test) => {
       },
       'it should clone functions defined in another scope': (expect) => {
         let func = () => 1
-        const Immutable = immutable('functionReference', {
+        const FuncImmutable = immutable('functionReference', {
           func: 'function'
         })
-        const actual = new Immutable({ func })
+        const actual = new FuncImmutable({ func })
         expect(actual.func()).to.equal(1)
         func = () => 2
         expect(actual.func()).to.equal(1)
@@ -296,10 +296,10 @@ module.exports = (test) => {
       'it should clone functions defined in another scope (strict mode)': (expect) => {
         'use strict'
         let func = () => 1
-        const Immutable = immutable('functionReference', {
+        const FuncImmutable = immutable('functionReference', {
           func: 'function'
         })
-        const actual = new Immutable({ func })
+        const actual = new FuncImmutable({ func })
         expect(actual.func()).to.equal(1)
         func = () => 2
         expect(func()).to.equal(2)
@@ -605,11 +605,6 @@ module.exports = (test) => {
         expect(sut.toObject({ removeFunctions: true })).to.deep.equal(expected)
       }
     },
-    'when an instance of an immutable has an array with instances of Immutable in it': {
-      '// it should not re-process them': () => {
-
-      }
-    },
     'when the scope of properties used to construct an instance of an immutable change ': {
       when: () => {
         const makeFixture = () => {
@@ -781,7 +776,7 @@ module.exports = (test) => {
             }
           }
         }
-        const immutable = new Immutable({ Validator })
+        const { immutable } = new PolynImmutable({ Validator })
         const Sut = immutable(expected.name, expected.schema)
         const sut = new Sut(expected.input)
 
@@ -843,7 +838,7 @@ module.exports = (test) => {
             }
           }
         }
-        const immutable = new Immutable({ Validator })
+        const { immutable } = new PolynImmutable({ Validator })
         const Sut = immutable(expected.name, expected.schema)
         const actualValid = new Sut(expected.validInput)
         const actualInvalid = () => new Sut(expected.invalidInput)

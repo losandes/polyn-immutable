@@ -68,6 +68,17 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         return is.object(input) && is.string(input.name) && is.function(input.validate) && is.object(input.schema);
       };
       /**
+       * Returns true if the object matches the (@polyn/immutable).immutable signature
+       * @param {any} input - the value to test
+       */
+
+
+      var isImmutable = function isImmutable(input) {
+        var proto = Object.getPrototypeOf(input);
+        var result = is.object(input) && (is.function(input.isPolynImmutable) || is.function(proto && proto.isPolynImmutable));
+        return result;
+      };
+      /**
        * The default validator uses @polyn/blueprint for vaidation
        * This can be overrided, to use things like ajv and JSON Schemas
        * @param {string} name - the name of the model
@@ -126,11 +137,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         };
       };
       /**
-       * Creates a new object from the given, `that`, and overwrites properties
-       * on it with the given, `input`
+       * Creates a new, mutable object from the given, `that`
        * @curried
        * @param {any} that - the object being patched
-       * @param {any} input - the properties being written
+       * @param {any} options - whether or not to remove functions
        */
 
 
@@ -216,7 +226,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         };
       };
 
-      function ImmutableInstance(config) {
+      function PolynImmutable(config) {
         config = _objectSpread({}, {
           Validator: Validator
         }, config);
@@ -230,7 +240,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
          * @param {object} schema - the blueprint schema
          */
 
-        return function (name, schema, options) {
+        var immutable = function immutable(name, schema, options) {
           var validator = new config.Validator(name, schema);
 
           var _functionsOnPrototype = _objectSpread({}, {
@@ -249,7 +259,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             return Object.freeze(input.map(function (val) {
               if (is.array(val)) {
                 return freezeArray(val);
-              } else if (is.object(val)) {
+              } else if (is.object(val) && !isImmutable(val)) {
                 return new Immutable(val);
               } else {
                 return val;
@@ -273,7 +283,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
               Object.keys(input).forEach(function (key) {
                 if (is.array(input[key])) {
                   _this[key] = freezeArray(input[key]);
-                } else if (is.object(input[key])) {
+                } else if (is.object(input[key]) && !isImmutable(input[key])) {
                   _this[key] = new Immutable(input[key]);
                 } else if (functionsOnPrototype && is.function(input[key])) {
                   Immutable.prototype[key] = input[key];
@@ -291,6 +301,11 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
               key: "toObject",
               value: function toObject(options) {
                 return _toObject(this, options);
+              }
+            }, {
+              key: "isPolynImmutable",
+              value: function isPolynImmutable() {
+                return true;
               }
             }]);
 
@@ -339,12 +354,17 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
           return ValidatedImmutable;
         };
+
+        return {
+          immutable: immutable
+        };
       }
 
       return {
-        immutable: new ImmutableInstance(),
-        Immutable: ImmutableInstance,
+        immutable: new PolynImmutable().immutable,
+        PolynImmutable: PolynImmutable,
         patch: _patch,
+        makeMutableClone: _toObject,
         array: function array(arr) {
           return {
             push: push(arr),

@@ -16,6 +16,18 @@ module.exports = {
     }
 
     /**
+     * Returns true if the object matches the (@polyn/immutable).immutable signature
+     * @param {any} input - the value to test
+     */
+    const isImmutable = (input) => {
+      const proto = Object.getPrototypeOf(input)
+      return is.object(input) && (
+        is.function(input.isPolynImmutable) ||
+        is.function(proto && proto.isPolynImmutable)
+      )
+    }
+
+    /**
      * The default validator uses @polyn/blueprint for vaidation
      * This can be overrided, to use things like ajv and JSON Schemas
      * @param {string} name - the name of the model
@@ -72,11 +84,10 @@ module.exports = {
     }
 
     /**
-     * Creates a new object from the given, `that`, and overwrites properties
-     * on it with the given, `input`
+     * Creates a new, mutable object from the given, `that`
      * @curried
      * @param {any} that - the object being patched
-     * @param {any} input - the properties being written
+     * @param {any} options - whether or not to remove functions
      */
     const toObject = (that, options) => {
       const shallowClone = Object.assign({}, that)
@@ -141,7 +152,7 @@ module.exports = {
       return [ ...arr ]
     }
 
-    function ImmutableInstance (config) {
+    function PolynImmutable (config) {
       config = { ...{ Validator }, ...config }
 
       /**
@@ -153,7 +164,7 @@ module.exports = {
        * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
        * @param {object} schema - the blueprint schema
        */
-      return (name, schema, options) => {
+      const immutable = (name, schema, options) => {
         const validator = new config.Validator(name, schema)
         const { functionsOnPrototype } = {
           ...{
@@ -173,7 +184,7 @@ module.exports = {
           return Object.freeze(input.map((val) => {
             if (is.array(val)) {
               return freezeArray(val)
-            } else if (is.object(val)) {
+            } else if (is.object(val) && !isImmutable(val)) {
               return new Immutable(val)
             } else {
               return val
@@ -190,7 +201,7 @@ module.exports = {
             Object.keys(input).forEach((key) => {
               if (is.array(input[key])) {
                 this[key] = freezeArray(input[key])
-              } else if (is.object(input[key])) {
+              } else if (is.object(input[key]) && !isImmutable(input[key])) {
                 this[key] = new Immutable(input[key])
               } else if (functionsOnPrototype && is.function(input[key])) {
                 Immutable.prototype[key] = input[key]
@@ -206,6 +217,10 @@ module.exports = {
 
           toObject (options) {
             return toObject(this, options)
+          }
+
+          isPolynImmutable () {
+            return true
           }
         }
 
@@ -235,12 +250,15 @@ module.exports = {
 
         return ValidatedImmutable
       }
+
+      return { immutable }
     }
 
     return {
-      immutable: new ImmutableInstance(),
-      Immutable: ImmutableInstance,
+      immutable: new PolynImmutable().immutable,
+      PolynImmutable,
       patch,
+      makeMutableClone: toObject,
       array: (arr) => {
         return {
           push: push(arr),
