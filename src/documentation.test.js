@@ -1,7 +1,7 @@
 const Ajv = require('ajv')
 
 module.exports = (test) => {
-  const { immutable, Immutable } = test.sut
+  const { immutable, PolynImmutable, blueprint, gt, is } = test.sut
   const log = function (...args) {
     // console.log.apply(this, args)
   }
@@ -183,7 +183,7 @@ module.exports = (test) => {
     },
     'cookbook': {
       'using-json-schema-with-ajv': () => {
-        // const { Immutable } = require('@polyn/immutable')
+        // const { PolynImmutable } = require('@polyn/immutable')
 
         /**
          * Creates a validator that uses ajv to validate data against
@@ -210,7 +210,7 @@ module.exports = (test) => {
           }
         }
 
-        const immutable = new Immutable({ Validator: AjvValidator })
+        const { immutable } = new PolynImmutable({ Validator: AjvValidator })
 
         const Person = immutable('Person', {
           $id: 'https://example.com/person.schema.json',
@@ -232,6 +232,77 @@ module.exports = (test) => {
               minimum: 0
             }
           }
+        })
+
+        const person = new Person({
+          firstName: 'John',
+          lastName: 'Doe',
+          age: 21
+        })
+
+        /* console. */ log(person)
+        // prints: ValidatedImmutable { firstName: 'John', lastName: 'Doe', age: 21 }
+
+        try {
+          const person2 = new Person({
+            firstName: 1,
+            lastName: 2,
+            age: -1
+          })
+          /* console. */ log('SHOULD NOT GET HERE', person2)
+        } catch (e) {
+          /* console. */ log(e.message)
+          // prints ( `\` line breaks for readability):
+          // Invalid Person: \
+          // Person.firstName should be string, \
+          // Person.lastName should be string, \
+          // Person.age should be >= 0
+        }
+      },
+      'using-a-different-version-of-blueprint': () => {
+        // const { blueprint, gt, is } = require('@polyn/blueprint')
+        // const { PolynImmutable } = require('@polyn/immutable')
+
+        const isBlueprint = (input) => {
+          return is.object(input) &&
+            is.string(input.name) &&
+            is.function(input.validate) &&
+            is.object(input.schema)
+        }
+
+        function Validator (name, schema) {
+          let bp
+
+          if (isBlueprint(name)) {
+            // a blueprint was passed as the first argument
+            bp = name
+          } else {
+            bp = blueprint(name, schema)
+          }
+
+          if (bp.err) {
+            throw bp.err
+          }
+
+          return {
+            validate: (input) => {
+              const validationResult = bp.validate(input)
+
+              if (validationResult.err) {
+                throw validationResult.err
+              }
+
+              return validationResult
+            }
+          }
+        }
+
+        const { immutable } = new PolynImmutable({ Validator })
+
+        const Person = immutable('Person', {
+          firstName: 'string',
+          lastName: 'string',
+          age: gt(0)
         })
 
         const person = new Person({

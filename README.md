@@ -16,6 +16,7 @@ Unlike `Object.freeze`, @polyn/immutable acts on your objects recursively: neste
 * [TypeScript Support](#typescript-support)
 * [Cookbook](#cookbook)
   * [Using JSON Schema with AJV](#using-json-schema-with-ajv)
+  * [Using a Different Version of Blueprint](#using-a-different-version-of-blueprint)
   * [Schema Inheritance](#schema-inheritance)
   * [Deep Equals With Functions](#deep-equals-with-functions)
 
@@ -75,6 +76,12 @@ try {
   // will print Invalid Product: Product.title {string} is invalid
 }
 ```
+
+> This library is bound to a specific version of [@polyn/blueprint](https://github.com/losandes/polyn-blueprint). If you install blueprint separately, and choose a different version, node will have two versions of blueprint in scope at runtime. All registrations will be performed on the version you install explicitly, which will make them unavailable to @polyn/immutable. Your best option is to just not do this.
+>
+> _Just install @polyn/immutable. @polyn/blueprint comes with it implicitly._
+>
+> If there is a reason you want a different version of @polyn/blueprint than the one packaged with @polyn/immutable, checkout [Using a Different Version of Blueprint](#using-a-different-version-of-blueprint) in the cookbook.
 
 ### Browser
 
@@ -296,29 +303,50 @@ function Validator (name, schema) {
 > If your validate function returns an object with a `value` property, the `value` will be used instead of the input to construct the immutable instance. This allows you to set defaults, and intercept values
 
 ## TypeScript Support
-This library exports types. A brief example is shown here. If you'd like to see more, the examples above are implemented in TypeScript in [examples-typescript.ts](./examples-typescript.ts).
+This library exports types. A brief example from [strictly-typed-input](./ts-examples/strictly-typed-input.test.ts) is shown here. If you'd like to see more, the examples above, as well as others, are implemented in TypeScript in [ts-examples](./ts-examples).
 
 ```TypeScript
-import { array, immutable, Immutable, IValidatedImmutable } from '@polyn/immutable';
-import { gt } from '@polyn/blueprint'
+import { gt, optional } from '@polyn/blueprint'
+import { immutable, IValidatedImmutable } from '@polyn/immutable';
+import { v4 as uuid } from 'uuid';
 
-export interface IPerson extends IValidatedImmutable<IPerson> {
+interface IPerson extends IValidatedImmutable<IPerson> {
+  readonly id: string;
   readonly firstName: string;
   readonly lastName: string;
   readonly age: number;
 }
 
-export const Person = immutable<IPerson>('Person', {
+// notice the `id` is optional
+interface IPersonInput {
+  readonly id?: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly age: number;
+}
+
+const Person = immutable<IPerson, IPersonInput>('Person', {
+  id: optional(UUID_REGEX).withDefault(uuid),
   firstName: 'string',
   lastName: 'string',
   age: gt(0)
-})
+});
 
 const person: IPerson = new Person({
   firstName: 'John',
   lastName: 'Doe',
   age: 21
-})
+});
+
+expect(UUID_REGEX.test(person.id)).to.equal(true);
+expect(person.firstName).to.equal('John');
+expect(person.lastName).to.equal('Doe');
+expect(person.age).to.equal(21);
+expect(() => new Person({
+  firstName: '',
+  lastName: '',
+  age: -1
+})).to.throw(Error, 'Invalid Person: expected `firstName` {string} to not be an empty string, expected `lastName` {string} to not be an empty string, expected `age` to be greater than 0');
 ```
 
 ## Cookbook
@@ -358,7 +386,7 @@ function AjvValidator (name, schema) {
   }
 }
 
-const immutable = new Immutable({ Validator: AjvValidator })
+const { immutable } = new PolynImmutable({ Validator: AjvValidator })
 
 const Person = immutable('Person', {
   $id: 'https://example.com/person.schema.json',
@@ -408,6 +436,62 @@ try {
 ```
 
 > NOTE this implementation isn't the fastest approach to using ajv, but it avoids collisions on the `ajv.errors` singleton
+
+### Using a Different Version of Blueprint
+This isn't necessary if you just install @polyn/immutable, and avoid conflicting versions of @polyn/blueprint. If you have a reason for doing this, you can create your own Validator, and a new instance of PolynImmutable.
+
+```JavaScript
+const { blueprint, gt, is } = require('@polyn/blueprint')
+const { PolynImmutable } = require('@polyn/immutable')
+
+const isBlueprint = (input) => {
+  return is.object(input) &&
+    is.string(input.name) &&
+    is.function(input.validate) &&
+    is.object(input.schema)
+}
+
+function Validator (name, schema) {
+  let bp
+
+  if (isBlueprint(name)) {
+    // a blueprint was passed as the first argument
+    bp = name
+  } else {
+    bp = blueprint(name, schema)
+  }
+
+  if (bp.err) {
+    throw bp.err
+  }
+
+  return {
+    validate: (input) => {
+      const validationResult = bp.validate(input)
+
+      if (validationResult.err) {
+        throw validationResult.err
+      }
+
+      return validationResult
+    }
+  }
+}
+
+const { immutable } = new PolynImmutable({ Validator })
+
+const Person = immutable('Person', {
+  firstName: 'string',
+  lastName: 'string',
+  age: gt(0)
+})
+
+const person = new Person({
+  firstName: 'John',
+  lastName: 'Doe',
+  age: 21
+})
+```
 
 ### Schema Inheritance
 

@@ -35,10 +35,51 @@ export interface IArrayUtils {
  * against the given schema. All of the properties on the returned
  * value are immutable
  * @curried
+ * @param {interface} T - The interface this immutable implements
  * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
  * @param {object} schema - the blueprint schema
  */
-export function immutable<T> (name: string, schema: any): new (...a: any[]) => T;
+export function immutable<T> (name: string, schema: any): new (input: any) => T;
+
+/**
+ * Creates a Validator (@polyn/blueprint by default) and returns a
+ * function for creating new instances of objects that get validated
+ * against the given schema. All of the properties on the returned
+ * value are immutable
+ * @curried
+ * @param {interface} T - The interface this immutable implements
+ * @param {interface} TInput - The interface this immutable's constructor accepts as input
+ * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
+ * @param {object} schema - the blueprint schema
+ */
+export function immutable<T, TInput> (name: string, schema: any): new (input: TInput) => T;
+
+export interface IImmutable {
+  /**
+   * Creates a Validator (@polyn/blueprint by default) and returns a
+   * function for creating new instances of objects that get validated
+   * against the given schema. All of the properties on the returned
+   * value are immutable
+   * @curried
+   * @param {interface} T - The interface this immutable implements
+   * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
+   * @param {object} schema - the blueprint schema
+   */
+  immutable<T> (name: string, schema: any): new (input: any) => T;
+
+  /**
+   * Creates a Validator (@polyn/blueprint by default) and returns a
+   * function for creating new instances of objects that get validated
+   * against the given schema. All of the properties on the returned
+   * value are immutable
+   * @curried
+   * @param {interface} T - The interface this immutable implements
+   * @param {interface} TInput - The interface this immutable's constructor accepts as input
+   * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
+   * @param {object} schema - the blueprint schema
+   */
+  immutable<T, TInput> (name: string, schema: any): new (input: TInput) => T;
+}
 
 /**
  * Create your own instance of `immutable`, passing in configuration, such as
@@ -48,8 +89,7 @@ export function immutable<T> (name: string, schema: any): new (...a: any[]) => T
  * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
  * @param {object} schema - the blueprint schema
  */
-export function Immutable (config: IConfig):
-  <T>(name: string, schema: any) => new (...a: any[]) => T;
+export function PolynImmutable (config: IConfig): IImmutable
 
 /**
  * Use functions that normally mutate an array with immutable equivalents
