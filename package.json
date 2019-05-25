@@ -1,6 +1,6 @@
 {
   "name": "@polyn/immutable",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Define object schema's for validation, and construction of immutable objects",
   "main": "index.js",
   "types": "index.d.ts",
@@ -53,6 +53,6 @@
     "uuid": "~3.3.2"
   },
   "dependencies": {
-    "@polyn/blueprint": "~2.1.4"
+    "@polyn/blueprint": "~2.2.0"
   }
 }

@@ -75,8 +75,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
       var isImmutable = function isImmutable(input) {
         var proto = Object.getPrototypeOf(input);
-        var result = is.object(input) && (is.function(input.isPolynImmutable) || is.function(proto && proto.isPolynImmutable));
-        return result;
+        return is.object(input) && (is.function(input.isPolynImmutable) || is.function(proto && proto.isPolynImmutable));
       };
       /**
        * The default validator uses @polyn/blueprint for vaidation

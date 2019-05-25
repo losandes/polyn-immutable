@@ -69,7 +69,7 @@ export function run () {
   // require an argument of type `any`. If you want your code to express
   // this statically, that works too:
 
-  const ILikeStatic = immutable<IPerson, any>('Person', {
+  const ILikeAnyStatic = immutable<IPerson, any>('Person', {
     id: optional(UUID_REGEX).withDefault(uuid),
     firstName: 'string',
     lastName: 'string',
