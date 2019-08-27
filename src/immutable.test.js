@@ -354,13 +354,13 @@ module.exports = (test) => {
         expect(err).to.be.null
         const { actual } = when
 
-        expect(() => actual.arr.push(4)).to.throw(TypeError, 'Cannot add property')
-        expect(() => actual.arr.pop()).to.throw(TypeError, 'Cannot delete property')
-        expect(() => actual.arr.splice(1, 1)).to.throw(TypeError, 'Cannot add/remove sealed array elements')
-        expect(() => actual.arr.shift()).to.throw(TypeError, 'Cannot add/remove sealed array elements')
-        expect(() => actual.arr.unshift()).to.throw(TypeError, 'Cannot assign to read only property')
-        expect(() => actual.arr.sort()).to.throw(TypeError, 'Cannot assign to read only property')
-        expect(() => actual.arr.reverse()).to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => actual.arr.push(4), 'push').to.throw(TypeError, 'Cannot add property')
+        expect(() => actual.arr.pop(), 'pop').to.throw(TypeError, 'Cannot delete property')
+        expect(() => actual.arr.splice(1, 1), 'splice').to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => actual.arr.shift(), 'shift').to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => actual.arr.unshift(), 'unshift').to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => actual.arr.sort(), 'sort').to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => actual.arr.reverse(), 'reverse').to.throw(TypeError, 'Cannot assign to read only property')
       },
       'it should not allow property deletion': (expect) => (err, when) => {
         expect(err).to.be.null
