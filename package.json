@@ -53,6 +53,6 @@
     "uuid": "^3.3.3"
   },
   "dependencies": {
-    "@polyn/blueprint": "^2.4.2"
+    "@polyn/blueprint": "^2.5.0"
   }
 }
