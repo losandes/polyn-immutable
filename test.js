@@ -1,10 +1,14 @@
 const { expect } = require('chai')
 const blueprint = require('@polyn/blueprint')
 const immutable = require('./index.js')
-const suite = require('supposed')
-  .Suite({ assertionLibrary: expect })
+const Ajv = require('ajv')
 
-suite.sut = { ...blueprint, ...immutable }
+const suite = require('supposed')
+  .Suite({
+    assertionLibrary: expect,
+    inject: { ...blueprint, ...immutable, ...{ Ajv } }
+  })
+
 suite.runner({
   directories: ['./src'],
   matchesNamingConvention: /.(\.test\.js)$/i,

@@ -1,13 +1,13 @@
 {
   "name": "@polyn/immutable",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Define object schema's for validation, and construction of immutable objects",
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
     "build": "node build.js",
     "pre-push": "npm test && node pre-push.js",
-    "test": "node test.js && npm run test:ts",
+    "test": "node test.js -r nyan && node test-browser.js -r nyan && npm run test:ts",
     "test:ts": "tsc -p ./tsconfig.json && node examples-typescript.js",
     "watch": "nodemon -e js --exec 'node test.js --tap | tap-nyan'"
   },
@@ -35,24 +35,26 @@
     "immutability"
   ],
   "devDependencies": {
-    "@babel/core": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
-    "@types/chai": "^4.2.0",
-    "@types/uuid": "^3.4.5",
-    "ajv": "^6.10.2",
-    "chai": "^4.2.0",
-    "eslint": "^6.2.2",
-    "eslint-config-standard": "^14.0.1",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-node": "^9.1.0",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1",
-    "pre-push": "^0.1.1",
-    "supposed": "^0.3.1",
-    "typescript": "^3.5.3",
-    "uuid": "^3.3.3"
+    "@babel/core": "~7.6.2",
+    "@babel/preset-env": "~7.6.2",
+    "@polyn/immutable": ".",
+    "@types/chai": "~4.2.3",
+    "@types/uuid": "~3.4.5",
+    "ajv": "~6.10.2",
+    "chai": "~4.2.0",
+    "eslint": "~6.5.1",
+    "eslint-config-standard": "~14.1.0",
+    "eslint-plugin-import": "~2.18.2",
+    "eslint-plugin-node": "~10.0.0",
+    "eslint-plugin-promise": "~4.2.1",
+    "eslint-plugin-standard": "~4.0.1",
+    "pre-push": "~0.1.1",
+    "puppeteer": "~1.20.0",
+    "supposed": "~1.0.4-beta.1",
+    "typescript": "~3.6.3",
+    "uuid": "~3.3.3"
   },
   "dependencies": {
-    "@polyn/blueprint": "^2.5.1"
+    "@polyn/blueprint": "~2.5.1"
   }
 }
