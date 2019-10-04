@@ -1,7 +1,12 @@
-const Ajv = require('ajv')
-
-module.exports = (test) => {
-  const { immutable, PolynImmutable, blueprint, registerValidator, registerBlueprint } = test.sut
+module.exports = (test, dependencies) => {
+  const {
+    immutable,
+    PolynImmutable,
+    blueprint,
+    registerValidator,
+    registerBlueprint,
+    Ajv
+  } = dependencies
 
   // PREP ======================================================================
   const { makeModel, makeOne, makeTwo } = (() => {
@@ -170,7 +175,7 @@ module.exports = (test) => {
     'when initialized without a name': {
       'it should throw': (expect) => {
         expect(() => { immutable(null, { str: 'string' }) })
-          .to.throw(`blueprint requires a name {string}, and a schema {object}`)
+          .to.throw('blueprint requires a name {string}, and a schema {object}')
       }
     }, // ctor without name
     'when initialized with a validator that intercepts values': {
@@ -251,7 +256,7 @@ module.exports = (test) => {
         expect(() => { actual.grandParent.parent.child.requiredString = 'primitive-test' })
           .to.throw(TypeError, 'Cannot assign to read only property')
       },
-      'it should freeze the primitives, recursively': (expect) => (err, when) => {
+      'it should freeze the primitives, recursively (_not_ strict mode)': (expect) => (err, when) => {
         expect(err).to.be.null
         const { expected, actual } = when
 
@@ -763,7 +768,7 @@ module.exports = (test) => {
           schema: { str: 'string' },
           input: { str: 'foo' }
         }
-        let actual = {}
+        const actual = {}
 
         function Validator (name, schema) {
           actual.name = name

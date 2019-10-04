@@ -1,7 +1,13 @@
-const Ajv = require('ajv')
+module.exports = (test, dependencies) => {
+  const {
+    immutable,
+    PolynImmutable,
+    blueprint,
+    gt,
+    is,
+    Ajv
+  } = dependencies
 
-module.exports = (test) => {
-  const { immutable, PolynImmutable, blueprint, gt, is } = test.sut
   const log = function (...args) {
     // console.log.apply(this, args)
   }
@@ -124,7 +130,7 @@ module.exports = (test) => {
 
       // define variables that meet the immutable's schema
       let makeOne = () => 1
-      let makeTwo = () => {
+      const makeTwo = () => {
         let nonDeterministicNumber = 2
 
         return {
@@ -181,7 +187,7 @@ module.exports = (test) => {
       // because it's a factory that exposes the inner scope
       expect(makeNumber.gettersAndSetters.get()).to.equal(3)
     },
-    'cookbook': {
+    cookbook: {
       'using-json-schema-with-ajv': () => {
         // const { PolynImmutable } = require('@polyn/immutable')
 
