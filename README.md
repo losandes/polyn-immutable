@@ -1,5 +1,9 @@
-@polyn/immutable
-================
+# @polyn/immutable
+
+![tests](https://github.com/losandes/polyn-immutable/workflows/tests/badge.svg)
+[![Coverage Status](https://coveralls.io/repos/github/losandes/polyn-immutable/badge.svg?branch=master)](https://coveralls.io/github/losandes/polyn-immutable?branch=master)
+
+
 Define object schemas for validation, and construction of immutable objects. @polyn/immutable uses native JavaScript features (namely, `Object.freeze`) to make your objects immutable. It uses [@polyn/blueprint](https://github.com/losandes/polyn-blueprint) to validate the schemas that you define, and also supports custom validators (i.e. if you prefer JSON Schemas).
 
 Unlike `Object.freeze`, @polyn/immutable acts on your objects recursively: nested objects are frozen, as well as the values inside arrays.

@@ -17,3 +17,5 @@ test-log.*
 test.js
 *.test.js
 tsconfig.json
+ts-examples
+.coveralls.yml
