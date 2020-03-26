@@ -56,7 +56,7 @@ module.exports = {
           }
 
           return validationResult
-        }
+        },
       }
     }
 
@@ -94,9 +94,9 @@ module.exports = {
       const output = {}
       const { removeFunctions } = {
         ...{
-          removeFunctions: false
+          removeFunctions: false,
         },
-        ...options
+        ...options,
       }
 
       Object.keys(shallowClone).forEach((key) => {
@@ -116,41 +116,18 @@ module.exports = {
       return output
     }
 
-    const push = (arr) => (newEntry) => {
-      return [ ...arr, newEntry ]
-    }
-
-    const pop = (arr) => () => {
-      return arr.slice(0, -1)
-    }
-
-    const shift = (arr) => () => {
-      return arr.slice(1)
-    }
-
-    const unshift = (arr) => (newEntry) => {
-      return [ newEntry, ...arr ]
-    }
-
-    const sort = (arr) => (compareFunction) => {
-      return [ ...arr ].sort(compareFunction)
-    }
-
-    const reverse = (arr) => () => {
-      return [ ...arr ].reverse()
-    }
-
-    const splice = (arr) => (start, deleteCount, ...items) => {
-      return [ ...arr.slice(0, start), ...items, ...arr.slice(start + deleteCount) ]
-    }
-
-    const remove = (arr) => (index) => {
-      return arr.slice(0, index).concat(arr.slice(index + 1))
-    }
-
-    const copy = (arr) => () => {
-      return [ ...arr ]
-    }
+    const push = (arr) => (...newEntry) => [...arr, ...newEntry]
+    const pop = (arr) => () => arr.slice(0, -1)
+    const shift = (arr) => () => arr.slice(1)
+    const unshift = (arr) => (...newEntry) => [...newEntry, ...arr]
+    const sort = (arr) => (compareFunction) => [...arr].sort(compareFunction)
+    const reverse = (arr) => () => [...arr].reverse()
+    const copy = (arr) => () => [...arr]
+    const slice = (arr) => (...args) => arr.slice(...args)
+    const splice = (arr) => (start, deleteCount, ...items) =>
+      [...arr.slice(0, start), ...items, ...arr.slice(start + deleteCount)]
+    const remove = (arr) => (index) =>
+      arr.slice(0, index).concat(arr.slice(index + 1))
 
     function PolynImmutable (config) {
       config = { ...{ Validator }, ...config }
@@ -168,9 +145,9 @@ module.exports = {
         const validator = new config.Validator(name, schema)
         const { functionsOnPrototype } = {
           ...{
-            functionsOnPrototype: false
+            functionsOnPrototype: false,
           },
-          ...options
+          ...options,
         }
 
         // NOTE the classes, and freezeArray are in here, so their
@@ -268,10 +245,11 @@ module.exports = {
           sort: sort(arr),
           reverse: reverse(arr),
           splice: splice(arr),
+          slice: slice(arr),
           remove: remove(arr),
-          copy: copy(arr)
+          copy: copy(arr),
         }
-      }
+      },
     }
-  }
+  },
 }

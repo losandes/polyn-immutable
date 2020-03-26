@@ -1,12 +1,16 @@
 "use strict";
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _createSuper(Derived) { return function () { var Super = _getPrototypeOf(Derived), result; if (_isNativeReflectConstruct()) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
@@ -18,17 +22,21 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(n); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -170,8 +178,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       };
 
       var push = function push(arr) {
-        return function (newEntry) {
-          return [].concat(_toConsumableArray(arr), [newEntry]);
+        return function () {
+          for (var _len = arguments.length, newEntry = new Array(_len), _key = 0; _key < _len; _key++) {
+            newEntry[_key] = arguments[_key];
+          }
+
+          return [].concat(_toConsumableArray(arr), newEntry);
         };
       };
 
@@ -188,8 +200,12 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       };
 
       var unshift = function unshift(arr) {
-        return function (newEntry) {
-          return [newEntry].concat(_toConsumableArray(arr));
+        return function () {
+          for (var _len2 = arguments.length, newEntry = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+            newEntry[_key2] = arguments[_key2];
+          }
+
+          return [].concat(newEntry, _toConsumableArray(arr));
         };
       };
 
@@ -205,10 +221,22 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
         };
       };
 
+      var copy = function copy(arr) {
+        return function () {
+          return _toConsumableArray(arr);
+        };
+      };
+
+      var slice = function slice(arr) {
+        return function () {
+          return arr.slice.apply(arr, arguments);
+        };
+      };
+
       var splice = function splice(arr) {
         return function (start, deleteCount) {
-          for (var _len = arguments.length, items = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-            items[_key - 2] = arguments[_key];
+          for (var _len3 = arguments.length, items = new Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
+            items[_key3 - 2] = arguments[_key3];
           }
 
           return [].concat(_toConsumableArray(arr.slice(0, start)), items, _toConsumableArray(arr.slice(start + deleteCount)));
@@ -218,12 +246,6 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
       var remove = function remove(arr) {
         return function (index) {
           return arr.slice(0, index).concat(arr.slice(index + 1));
-        };
-      };
-
-      var copy = function copy(arr) {
-        return function () {
-          return _toConsumableArray(arr);
         };
       };
 
@@ -273,9 +295,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
            */
 
 
-          var Immutable =
-          /*#__PURE__*/
-          function () {
+          var Immutable = /*#__PURE__*/function () {
             function Immutable(input) {
               var _this = this;
 
@@ -318,10 +338,10 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
            */
 
 
-          var ValidatedImmutable =
-          /*#__PURE__*/
-          function (_Immutable) {
+          var ValidatedImmutable = /*#__PURE__*/function (_Immutable) {
             _inherits(ValidatedImmutable, _Immutable);
+
+            var _super = _createSuper(ValidatedImmutable);
 
             function ValidatedImmutable(input) {
               var _this2;
@@ -329,7 +349,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
               _classCallCheck(this, ValidatedImmutable);
 
               var result = validator.validate(input);
-              _this2 = _possibleConstructorReturn(this, _getPrototypeOf(ValidatedImmutable).call(this, result && result.value || input));
+              _this2 = _super.call(this, result && result.value || input);
 
               if ((this instanceof ValidatedImmutable ? this.constructor : void 0) === ValidatedImmutable) {
                 Object.freeze(_assertThisInitialized(_this2));
@@ -375,6 +395,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
             sort: sort(arr),
             reverse: reverse(arr),
             splice: splice(arr),
+            slice: slice(arr),
             remove: remove(arr),
             copy: copy(arr)
           };

@@ -13,7 +13,7 @@ module.exports = suite.runner({
     '/node_modules/chai/chai.js',
     '/node_modules/ajv/dist/ajv.min.js',
     '/node_modules/@polyn/blueprint/dist/blueprint.min.js',
-    '/dist/immutable.min.js'
+    '/dist/immutable.min.js',
   ],
   matchesNamingConvention: /.(\.test\.js)$/i,
   matchesIgnoredConvention: /node_modules|documentation.test.js/i,
@@ -21,7 +21,7 @@ module.exports = suite.runner({
     '  reporter: "event",' +
     '  assertionLibrary: chai.expect,' +
     '  inject: { ...polyn.blueprint, ...polyn.immutable, ...{ Ajv } }' +
-    '}'
+    '}',
 }).startServer()
   .then(async (context) => {
     const browser = await puppeteer.launch()
@@ -40,7 +40,7 @@ module.exports = suite.runner({
           await page.pdf({ path: path.join(__projectdir, `test-log.${Date.now()}.pdf`), format: 'A4' })
         }
       } catch (e) {
-        console.log(txt)
+        console.log(txt) // eslint-disable-line no-console
         context.lastEvent = txt
       }
     })

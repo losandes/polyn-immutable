@@ -1,14 +1,19 @@
 {
   "name": "@polyn/immutable",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Define object schema's for validation, and construction of immutable objects",
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
     "build": "node build.js",
-    "pre-push": "npm test && node pre-push.js",
+    "pre-push": "npm run lint && npm test && node pre-push.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "node test.js -r nyan && node test-browser.js -r nyan && npm run test:ts",
     "test:ts": "tsc -p ./tsconfig.json && node examples-typescript.js",
+    "test:coverage": "nyc node test.js -r nyan",
+    "test:coverage:ci": "mkdir ./coverage && touch ./coverage/lcov.info && node test-browser.js -r tap && npm run test:ts && nyc node test.js -r tap,summary && nyc report --reporter=text-lcov > ./coverage/lcov.info",
+    "test:coveralls": "nyc node test.js && nyc report --reporter=text-lcov | coveralls",
     "watch": "nodemon -e js --exec 'node test.js --tap | tap-nyan'"
   },
   "pre-push": [
@@ -35,26 +40,29 @@
     "immutability"
   ],
   "devDependencies": {
-    "@babel/core": "~7.6.2",
-    "@babel/preset-env": "~7.6.2",
-    "@polyn/immutable": ".",
-    "@types/chai": "~4.2.3",
-    "@types/uuid": "~3.4.5",
-    "ajv": "~6.10.2",
+    "@babel/core": "~7.8.7",
+    "@babel/preset-env": "~7.8.7",
+    "@polyn/blueprint": "2.5.3",
+    "@polyn/immutable": "link:",
+    "@types/chai": "~4.2.11",
+    "@types/uuid": "~7.0.2",
+    "ajv": "~6.12.0",
     "chai": "~4.2.0",
-    "eslint": "~6.5.1",
-    "eslint-config-standard": "~14.1.0",
-    "eslint-plugin-import": "~2.18.2",
-    "eslint-plugin-node": "~10.0.0",
+    "coveralls": "~3.0.11",
+    "eslint": "~6.8.0",
+    "eslint-config-standard": "~14.1.1",
+    "eslint-plugin-import": "~2.20.1",
+    "eslint-plugin-node": "~11.0.0",
     "eslint-plugin-promise": "~4.2.1",
     "eslint-plugin-standard": "~4.0.1",
+    "nyc": "~15.0.0",
     "pre-push": "~0.1.1",
-    "puppeteer": "~1.20.0",
-    "supposed": "~1.0.4-beta.1",
-    "typescript": "~3.6.3",
-    "uuid": "~3.3.3"
+    "puppeteer": "~2.1.1",
+    "supposed": "~1.0.7-beta.1",
+    "typescript": "~3.8.3",
+    "uuid": "~7.0.2"
   },
-  "dependencies": {
-    "@polyn/blueprint": "~2.5.1"
+  "peerDependencies": {
+    "@polyn/blueprint": "2.5.3"
   }
 }
