@@ -14,7 +14,7 @@
     // this property should show up when this object's property names are enumerated
     enumerable: true,
     // this property may not be deleted
-    configurable: false
+    configurable: false,
   })
 
   // MODULES_HERE
@@ -28,7 +28,7 @@
   const immutable = module.factories.immutable(root.polyn.blueprint)
 
   root.polyn.immutable = Object.freeze({
-    ...immutable
+    ...immutable,
   })
 
   // we don't need these anymore

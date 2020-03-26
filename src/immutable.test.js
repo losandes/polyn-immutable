@@ -1,11 +1,12 @@
 module.exports = (test, dependencies) => {
   const {
     immutable,
+    array,
     PolynImmutable,
     blueprint,
     registerValidator,
     registerBlueprint,
-    Ajv
+    Ajv,
   } = dependencies
 
   // PREP ======================================================================
@@ -23,7 +24,9 @@ module.exports = (test, dependencies) => {
         decimal: 'decimal',
         func: 'function',
         arr: 'number[]',
-        objArr: 'any[]'
+        objArr: 'any[]',
+        arrArr: 'any[]',
+        obj: 'object',
       }
     }
 
@@ -40,7 +43,9 @@ module.exports = (test, dependencies) => {
         decimal: 1.10,
         func: () => 1,
         arr: [1, 2, 3],
-        objArr: [{ one: 1 }, { two: 2 }, { three: 3 }]
+        objArr: [{ one: 1 }, { two: 2 }, { three: 3 }],
+        arrArr: [[1, 2], [3, 4]],
+        obj: { foo: 'bar' },
       }
     }
 
@@ -57,7 +62,9 @@ module.exports = (test, dependencies) => {
         decimal: 2.20,
         func: () => 2,
         arr: [4, 5, 6],
-        objArr: [{ four: 4 }, { five: 5 }, { six: 6 }]
+        objArr: [{ four: 4 }, { five: 5 }, { six: 6 }],
+        arrArr: [[5, 6], [7, 8]],
+        obj: { foo: 'baz' },
       }
     }
 
@@ -111,7 +118,7 @@ module.exports = (test, dependencies) => {
       when: () => {
         return immutable('Sut', {
           requiredString: 'string',
-          optionalString: 'string?'
+          optionalString: 'string?',
         })
       },
       'it should return an instanceof ValidatedImmutable': (expect) => (err, Sut) => {
@@ -124,36 +131,36 @@ module.exports = (test, dependencies) => {
         expect(err).to.be.null
         const expected = {
           requiredString: 'one',
-          optionalString: 'two'
+          optionalString: 'two',
         }
 
         expect(new Sut(expected)).to.deep.equal(expected)
-      }
+      },
     }, // ctor valid name
     'when initialized with an invalid name': {
       when: () => {
         const Sut = immutable(null, {
           requiredString: 'string',
-          optionalString: 'string?'
+          optionalString: 'string?',
         })
 
         return new Sut({
           requiredString: null,
-          optionalString: 1
+          optionalString: 1,
         })
       },
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
         expect(err.message).to.equal('blueprint requires a name {string}, and a schema {object}')
-      }
+      },
     }, // ctor invalid name
     'when initialized with an existing blueprint': {
       when: () => {
         const Sut = immutable(blueprint('ConstructedWithBlueprint', {
-          str: 'string'
+          str: 'string',
         }))
         const expected = {
-          str: 'hello'
+          str: 'hello',
         }
         const actual = new Sut(expected)
 
@@ -164,19 +171,19 @@ module.exports = (test, dependencies) => {
         const { expected, actual } = when
 
         expect(actual).to.deep.equal(expected)
-      }
+      },
     }, // ctor existing blueprint
     'when initialized with an invalid blueprint': {
       'it should throw': (expect) => {
         expect(() => { immutable('name', null) })
           .to.throw('blueprint requires a name {string}, and a schema {object}')
-      }
+      },
     }, // ctor invalid blueprint
     'when initialized without a name': {
       'it should throw': (expect) => {
         expect(() => { immutable(null, { str: 'string' }) })
           .to.throw('blueprint requires a name {string}, and a schema {object}')
-      }
+      },
     }, // ctor without name
     'when initialized with a validator that intercepts values': {
       when: () => {
@@ -189,17 +196,17 @@ module.exports = (test, dependencies) => {
         })
         const Product = immutable('Product', {
           type1: 'productTypeWithDefault',
-          type2: 'productTypeWithDefault'
+          type2: 'productTypeWithDefault',
         })
         return new Product({
-          type2: 'movie'
+          type2: 'movie',
         })
       },
       'it should use the intercepted values': (expect) => (err, actual) => {
         expect(err).to.be.null
         expect(actual.type1).to.equal('product')
         expect(actual.type2).to.equal('product')
-      }
+      },
     }, // value interception
     'when initialized with functionsOnPrototype option': {
       when: () => {
@@ -207,9 +214,9 @@ module.exports = (test, dependencies) => {
           type: /^book$/i,
           comparableType: ({ input }) => {
             return {
-              value: () => input.toLowerCase()
+              value: () => input.toLowerCase(),
             }
-          }
+          },
         }, { functionsOnPrototype: true })
 
         const p1 = new Product({ type: 'book' })
@@ -220,7 +227,7 @@ module.exports = (test, dependencies) => {
       'it should be comparable with deep equals': (expect) => (err, { p1, p2 }) => {
         expect(err).to.be.null
         expect(p1).to.deep.equal(p2)
-      }
+      },
     }, // value interception returns function
     'when an immutable is constructed with valid input': {
       when: () => {
@@ -291,7 +298,7 @@ module.exports = (test, dependencies) => {
       'it should clone functions defined in another scope': (expect) => {
         let func = () => 1
         const FuncImmutable = immutable('functionReference', {
-          func: 'function'
+          func: 'function',
         })
         const actual = new FuncImmutable({ func })
         expect(actual.func()).to.equal(1)
@@ -302,7 +309,7 @@ module.exports = (test, dependencies) => {
         'use strict'
         let func = () => 1
         const FuncImmutable = immutable('functionReference', {
-          func: 'function'
+          func: 'function',
         })
         const actual = new FuncImmutable({ func })
         expect(actual.func()).to.equal(1)
@@ -361,11 +368,11 @@ module.exports = (test, dependencies) => {
 
         expect(() => actual.arr.push(4), 'push').to.throw(TypeError, 'Cannot add property')
         expect(() => actual.arr.pop(), 'pop').to.throw(TypeError, 'Cannot delete property')
-        expect(() => actual.arr.splice(1, 1), 'splice').to.throw(TypeError, 'Cannot assign to read only property')
-        expect(() => actual.arr.shift(), 'shift').to.throw(TypeError, 'Cannot assign to read only property')
-        expect(() => actual.arr.unshift(), 'unshift').to.throw(TypeError, 'Cannot assign to read only property')
-        expect(() => actual.arr.sort(), 'sort').to.throw(TypeError, 'Cannot assign to read only property')
-        expect(() => actual.arr.reverse(), 'reverse').to.throw(TypeError, 'Cannot assign to read only property')
+        expect(() => actual.arr.splice(1, 1), 'splice').to.throw(TypeError)
+        expect(() => actual.arr.shift(), 'shift').to.throw(TypeError)
+        expect(() => actual.arr.unshift(), 'unshift').to.throw(TypeError)
+        expect(() => actual.arr.sort(), 'sort').to.throw(TypeError)
+        expect(() => actual.arr.reverse(), 'reverse').to.throw(TypeError)
       },
       'it should not allow property deletion': (expect) => (err, when) => {
         expect(err).to.be.null
@@ -380,52 +387,52 @@ module.exports = (test, dependencies) => {
         const { actual } = when
 
         expect(() => { delete actual.requiredString }).to.throw(TypeError, 'Cannot delete property')
-      }
+      },
     }, // constructed with valid input
     'when an immutable is constructed with an instance of another immutable': {
       when: () => {
         const Sut1 = immutable('doubleFreezeInputTest1', {
           requiredString: 'string',
-          optionalString: 'string?'
+          optionalString: 'string?',
         })
 
         const Sut2 = immutable('doubleFreezeInputTest2', {
-          requiredString: 'string'
+          requiredString: 'string',
         })
 
         const sut1 = new Sut1({ requiredString: 'one', optionalString: 'two' })
         return {
           expected: { requiredString: 'one' },
-          actual: new Sut2(sut1)
+          actual: new Sut2(sut1),
         }
       },
       'it should return the value': (expect) => (err, { expected, actual }) => {
         expect(err).to.be.null
         expect(actual).to.deep.equal(expected)
-      }
+      },
     }, // constructed with another immutable
     'when an immutable is constructed with invalid input': {
       when: () => {
         const Sut = immutable('invalidInputTest', {
           requiredString: 'string',
-          optionalString: 'string?'
+          optionalString: 'string?',
         })
 
         return new Sut({
           requiredString: null,
-          optionalString: 1
+          optionalString: 1,
         })
       },
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
         expect(err.message).to.equal('Invalid invalidInputTest: expected `requiredString` {null} to be {string}, expected `optionalString` {number} to be {string}')
-      }
+      },
     }, // invalid input
     'when an immutable is constructed with null input': {
       when: () => {
         const Sut = immutable('nullInputTest', {
           requiredString: 'string',
-          optionalString: 'string?'
+          optionalString: 'string?',
         })
 
         return new Sut(null)
@@ -433,13 +440,13 @@ module.exports = (test, dependencies) => {
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
         expect(err.message).to.equal('Invalid nullInputTest: expected `requiredString` {null} to be {string}')
-      }
+      },
     }, // null input
     'when an immutable is constructed with undefined input': {
       when: () => {
         const Sut = immutable('undefinedInputTest', {
           requiredString: 'string',
-          optionalString: 'string?'
+          optionalString: 'string?',
         })
 
         return new Sut()
@@ -447,17 +454,17 @@ module.exports = (test, dependencies) => {
       'it should throw': (expect) => (err) => {
         expect(err).to.not.be.null
         expect(err.message).to.equal('Invalid undefinedInputTest: expected `requiredString` {undefined} to be {string}')
-      }
+      },
     }, // undefined input
     'when an immutable is constructed with a valid null value in the input': {
       when: () => {
         const Sut = immutable('nullInputTest', {
           requiredString: 'string',
-          optionalObj: 'object?'
+          optionalObj: 'object?',
         })
         const expected = {
           requiredString: 'one',
-          optionalObj: null
+          optionalObj: null,
         }
         const actual = new Sut(expected)
 
@@ -468,7 +475,7 @@ module.exports = (test, dependencies) => {
         const { expected, actual } = context
 
         expect(actual).to.deep.equal(expected)
-      }
+      },
     }, // null value in input
     'when an instance of an immutable is enumerated with Object.keys': {
       when: () => {
@@ -490,7 +497,7 @@ module.exports = (test, dependencies) => {
         expect(childKeys.includes('toObject')).to.equal(false)
         expect(childKeys.indexOf('patch')).to.equal(-1)
         expect(childKeys.indexOf('toObject')).to.equal(-1)
-      }
+      },
     }, // prototype Object.keys
     'when an instance of an immutable is `patch`ed': {
       when: () => {
@@ -519,7 +526,7 @@ module.exports = (test, dependencies) => {
         const { expectedOriginal, actualOriginal } = when
 
         expect(actualOriginal).to.deep.equal(expectedOriginal)
-      }
+      },
     }, // patch
     'when an instance of an immutable is cast `toObject`': {
       when: () => {
@@ -572,23 +579,23 @@ module.exports = (test, dependencies) => {
       },
       'it should not throw on null values': (expect) => {
         registerBlueprint('ToObjectNullTestBp', {
-          foo: 'string'
+          foo: 'string',
         })
         const Sut = immutable('ToObjectNullTest', {
           foo: 'string',
-          bar: 'ToObjectNullTestBp?'
+          bar: 'ToObjectNullTestBp?',
         })
         const expected = {
           foo: 'hello',
-          bar: null
+          bar: null,
         }
         const sut = new Sut(expected)
 
         expect(sut.toObject()).to.deep.equal({
           foo: 'hello',
-          bar: null
+          bar: null,
         })
-      }
+      },
     }, // toObject
     'when an instance of an immutable is cast `toObject` with options': {
       when: () => {
@@ -608,7 +615,33 @@ module.exports = (test, dependencies) => {
         const { expected, sut } = when
 
         expect(sut.toObject({ removeFunctions: true })).to.deep.equal(expected)
-      }
+      },
+    },
+    'when the schema is retrieved for an instance of immutable': {
+      when: () => {
+        const Sut = immutable('ToObjectTest', makeModel())
+        const sut = new Sut(makeOne())
+        const actual = sut.getSchema()
+
+        return { actual }
+      },
+      'it shoud return the schema': (expect) => (err, result) => {
+        expect(err).to.equal(null)
+        expect(result.actual).to.deep.equal(makeModel())
+      },
+    },
+    'when `isPolynImmutable` is called on an instance of immutable': {
+      when: () => {
+        const Sut = immutable('ToObjectTest', makeModel())
+        const sut = new Sut(makeOne())
+        const actual = sut.isPolynImmutable()
+
+        return { actual }
+      },
+      'it shoud return the true': (expect) => (err, result) => {
+        expect(err).to.equal(null)
+        expect(result.actual).to.equal(true)
+      },
     },
     'when the scope of properties used to construct an instance of an immutable change ': {
       when: () => {
@@ -623,8 +656,8 @@ module.exports = (test, dependencies) => {
               makeOne: 'function',
               plusOne: 'number',
               innerRef: 'string',
-              ref: 'function'
-            }
+              ref: 'function',
+            },
           })
 
           const makeFixture = function (num) {
@@ -643,9 +676,9 @@ module.exports = (test, dependencies) => {
                 return {
                   makeOne: (() => num)(),
                   plusOne,
-                  innerRef
+                  innerRef,
                 }
-              }
+              },
             }
           }
 
@@ -656,7 +689,7 @@ module.exports = (test, dependencies) => {
             ref: {
               makeOne: 1,
               plusOne: 2,
-              innerRef: 'foo'
+              innerRef: 'foo',
             },
             child: {
               makeOne: 2,
@@ -665,9 +698,9 @@ module.exports = (test, dependencies) => {
               ref: {
                 makeOne: 2,
                 plusOne: 3,
-                innerRef: 'foo'
-              }
-            }
+                innerRef: 'foo',
+              },
+            },
           }
 
           const expectedAfterMutation = {
@@ -677,7 +710,7 @@ module.exports = (test, dependencies) => {
             ref: {
               makeOne: 1,
               plusOne: -1,
-              innerRef: 'bar'
+              innerRef: 'bar',
             },
             child: {
               makeOne: 2,
@@ -686,13 +719,13 @@ module.exports = (test, dependencies) => {
               ref: {
                 makeOne: 2,
                 plusOne: -1,
-                innerRef: 'bar'
-              }
-            }
+                innerRef: 'bar',
+              },
+            },
           }
 
           const parent = {
-            fixture: makeFixture(1)
+            fixture: makeFixture(1),
           }
           parent.fixture.child = makeFixture(2)
           const actual = new MakeNumber(parent.fixture)
@@ -759,14 +792,14 @@ module.exports = (test, dependencies) => {
         expect(actual.child.plusOne).to.equal(expectedAfterMutation.child.plusOne)
         expect(actual.child.innerRef).to.equal(expectedAfterMutation.child.innerRef)
         expect(actual.child.ref()).to.deep.equal(expectedAfterMutation.child.ref)
-      }
+      },
     }, // scope
     'when a new `Immutable` is constructed/configured': {
       'it should let you set the Validator': (expect) => {
         const expected = {
           name: 'NewImmutable:Validator',
           schema: { str: 'string' },
-          input: { str: 'foo' }
+          input: { str: 'foo' },
         }
         const actual = {}
 
@@ -778,7 +811,7 @@ module.exports = (test, dependencies) => {
             validate: (input) => {
               actual.input = input
               return true
-            }
+            },
           }
         }
         const { immutable } = new PolynImmutable({ Validator })
@@ -801,29 +834,29 @@ module.exports = (test, dependencies) => {
             properties: {
               firstName: {
                 type: 'string',
-                description: 'The person\'s first name.'
+                description: 'The person\'s first name.',
               },
               lastName: {
                 type: 'string',
-                description: 'The person\'s last name.'
+                description: 'The person\'s last name.',
               },
               age: {
                 description: 'Age in years which must be equal to or greater than zero.',
                 type: 'integer',
-                minimum: 0
-              }
-            }
+                minimum: 0,
+              },
+            },
           },
           validInput: {
             firstName: 'John',
             lastName: 'Doe',
-            age: 21
+            age: 21,
           },
           invalidInput: {
             firstName: 1,
             lastName: 2,
-            age: -1
-          }
+            age: -1,
+          },
         }
 
         function Validator (name, schema) {
@@ -840,7 +873,7 @@ module.exports = (test, dependencies) => {
               if (!isValid) {
                 throw new Error(`Invalid ${name}: ${makeErrorText(ajv.errors)}`)
               }
-            }
+            },
           }
         }
         const { immutable } = new PolynImmutable({ Validator })
@@ -850,8 +883,182 @@ module.exports = (test, dependencies) => {
 
         expect(actualValid).to.deep.equal(expected.validInput)
         expect(actualInvalid).to.throw(Error, 'Invalid NewImmutable:JSONSchema: NewImmutable:JSONSchema.firstName should be string, NewImmutable:JSONSchema.lastName should be string, NewImmutable:JSONSchema.age should be >= 0')
-      }
+      },
     }, // setValidator
+    'when an immutable is extended with a static property': {
+      when: () => {
+        const Sut = immutable('staticExtensionTest', {
+          requiredString: 'string',
+          optionalObj: 'object?',
+        })
+
+        Sut.staticProp = 'static'
+        Sut.staticFunc = () => 'static'
+
+        return Sut
+      },
+      'it should allow static properties, and have no effect on them': (expect) => (err, actual) => {
+        expect(err).to.be.null
+        expect(actual.staticProp).to.equal('static')
+        expect(actual.staticFunc()).to.equal('static')
+        actual.staticProp = 'static2'
+        expect(actual.staticProp).to.equal('static2')
+      },
+    },
+    'when `immutable.array` is used': {
+      given: () => [3, 1, 2],
+      'and `push` is executed with a new value': {
+        when: (original) => ({
+          original,
+          actual: array(original).push(4, 5),
+        }),
+        'it should return a new array with the value(s) appended to it': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original).to.deep.equal([3, 1, 2])
+          expect(actual).to.deep.equal([3, 1, 2, 4, 5])
+        },
+      },
+      'and `pop` is executed': {
+        when: (original) => ({
+          original,
+          actual: array(original).pop(),
+        }),
+        'it should return a new array with the last element having been removed': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original).to.deep.equal([3, 1, 2])
+          expect(actual).to.deep.equal([3, 1])
+        },
+      },
+      'and `shift` is executed': {
+        when: (original) => ({
+          original,
+          actual: array(original).shift(),
+        }),
+        'it should return a new array with the first element having been removed': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original).to.deep.equal([3, 1, 2])
+          expect(actual).to.deep.equal([1, 2])
+        },
+      },
+      'and `unshift` is executed': {
+        when: (original) => ({
+          original,
+          actual: array(original).unshift(4, 5),
+        }),
+        'it should return a new array with the value(s) added at the beginning of the array': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original).to.deep.equal([3, 1, 2])
+          expect(actual).to.deep.equal([4, 5, 3, 1, 2])
+        },
+      },
+      'and `sort` is executed without a comparer function': {
+        when: (original) => ({
+          original,
+          actual: array(original).sort(),
+        }),
+        'it should return a new array with sorted values': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original).to.deep.equal([3, 1, 2])
+          expect(actual).to.deep.equal([1, 2, 3])
+        },
+      },
+      'and `sort` is executed with a comparer function': {
+        when: (original) => ({
+          original,
+          actual: array(original).sort((a, b) => b - a),
+        }),
+        'it should return a new array with sorted values': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original).to.deep.equal([3, 1, 2])
+          expect(actual).to.deep.equal([3, 2, 1])
+        },
+      },
+      'and `reverse` is executed': {
+        when: (original) => ({
+          original,
+          actual: array(original).reverse(),
+        }),
+        'it should return a new array with the values in opposite order': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original, 'original').to.deep.equal([3, 1, 2])
+          expect(actual, 'actual').to.deep.equal([2, 1, 3])
+        },
+      },
+      'and `slice` is executed': {
+        when: (original) => ({
+          original,
+          actual: array(original).slice(0, 2),
+        }),
+        'it should return a new array with the values in opposite order': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original, 'original').to.deep.equal([3, 1, 2])
+          expect(actual, 'actual').to.deep.equal([3, 1])
+        },
+      },
+      'and `splice` is executed with 0 as the 2nd arg': {
+        when: (original) => ({
+          original,
+          actual: array(original).splice(1, 0, 4),
+        }),
+        'it should return a new array with the 3rd arg inserted at the index that matches the 1st arg': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original, 'original').to.deep.equal([3, 1, 2])
+          expect(actual, 'actual').to.deep.equal([3, 4, 1, 2])
+        },
+      },
+      'and `splice` is executed with a number greater than 0 as the 2nd arg': {
+        when: (original) => ({
+          original,
+          actual: array(original).splice(1, 1, 4),
+          actual2: array(original).splice(1, 2, 4, 5),
+        }),
+        'it should return a new array replacing the number of elements indicated by the 2nd arg with the args that follow it': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual, actual2 } = result
+          expect(original, 'original').to.deep.equal([3, 1, 2])
+          expect(actual, 'actual').to.deep.equal([3, 4, 2])
+          expect(actual2, 'actual2').to.deep.equal([3, 4, 5])
+        },
+      },
+      'and `remove` is executed': {
+        when: (original) => ({
+          original,
+          actual: array(original).remove(1),
+        }),
+        'it should removed the element at the given index': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original, 'original').to.deep.equal([3, 1, 2])
+          expect(actual, 'actual').to.deep.equal([3, 2])
+        },
+      },
+      'and `copy` is executed': {
+        when: (original) => {
+          const result = {
+            original,
+            actual: array(original).copy(),
+          }
+
+          result.actual.pop() // mutate the copy
+          return result
+        },
+        'it should return a clone of the array': (expect) => (err, result) => {
+          expect(err).to.equal(null)
+          const { original, actual } = result
+          expect(original, 'original').to.deep.equal([3, 1, 2])
+          expect(actual, 'actual').to.deep.equal([3, 1])
+        },
+      },
+    },
     '// benchmark': {
       when: () => {
         const times = 1000
@@ -878,15 +1085,17 @@ module.exports = (test, dependencies) => {
 
         return {
           objDuration: objEnd - objStart,
-          immutableDuration: immutableEnd - immutableStart
+          immutableDuration: immutableEnd - immutableStart,
         }
       },
+      /* eslint-disable no-console */
       'compared to regular objects (note ~1/2+ the time is blueprint validation)': (expect) => (err, results) => {
         expect(err).to.be.null
 
         console.log(`Duration for creating objects (ms): ${results.objDuration}`)
         console.log(`Duration for creating immutables (ms): ${results.immutableDuration}`)
-      }
-    }
+      },
+      /* eslint-enable no-console */
+    },
   })
 }

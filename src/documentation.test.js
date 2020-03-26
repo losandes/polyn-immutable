@@ -5,7 +5,7 @@ module.exports = (test, dependencies) => {
     blueprint,
     gt,
     is,
-    Ajv
+    Ajv,
   } = dependencies
 
   const log = function (...args) {
@@ -24,8 +24,8 @@ module.exports = (test, dependencies) => {
         type: /^book|magazine|card$/,
         metadata: {
           keywords: 'string[]',
-          isbn: 'string?'
-        }
+          isbn: 'string?',
+        },
       })
 
       const product = new Product({
@@ -36,8 +36,8 @@ module.exports = (test, dependencies) => {
         type: 'book',
         metadata: {
           keywords: ['swamp'],
-          isbn: '0-307-26399-1'
-        }
+          isbn: '0-307-26399-1',
+        },
       })
 
       /* console. */ log(product)
@@ -51,8 +51,8 @@ module.exports = (test, dependencies) => {
           type: 'book',
           metadata: {
             keywords: ['swamp'],
-            isbn: '0-307-26399-1'
-          }
+            isbn: '0-307-26399-1',
+          },
         })
         /* console. */ log('SHOULD NOT GET HERE', product2)
       } catch (e) {
@@ -67,13 +67,13 @@ module.exports = (test, dependencies) => {
       const Person = immutable('Person', {
         firstName: 'string',
         lastName: 'string',
-        age: gt(0)
+        age: gt(0),
       })
 
       const person = new Person({
         firstName: 'John',
         lastName: 'Doe',
-        age: 21
+        age: 21,
       })
 
       /* console. */ log(person)
@@ -93,13 +93,13 @@ module.exports = (test, dependencies) => {
       const Person = immutable('Person', {
         firstName: 'string',
         lastName: 'string',
-        age: gt(0)
+        age: gt(0),
       })
 
       const person = new Person({
         firstName: 'John',
         lastName: 'Doe',
-        age: 21
+        age: 21,
       })
 
       /* console. */ log(person)
@@ -123,9 +123,9 @@ module.exports = (test, dependencies) => {
         gettersAndSetters: {
           immutableTwo: 'number',
           get: 'function',
-          set: 'function'
+          set: 'function',
         },
-        one: 'number'
+        one: 'number',
       })
 
       // define variables that meet the immutable's schema
@@ -138,7 +138,7 @@ module.exports = (test, dependencies) => {
           get: () => nonDeterministicNumber,
           set: (num) => {
             nonDeterministicNumber = num
-          }
+          },
         }
       }
       let one = 1
@@ -148,7 +148,7 @@ module.exports = (test, dependencies) => {
       const makeNumber = new MakeNumber({
         makeOne,
         gettersAndSetters: makeTwo(),
-        one
+        one,
       })
 
       // each of `makeNumber.makeOne()`, and `makeNumber.one` returns 1
@@ -212,7 +212,7 @@ module.exports = (test, dependencies) => {
               if (!isValid) {
                 throw new Error(`Invalid ${name}: ${makeErrorText(ajv.errors)}`)
               }
-            }
+            },
           }
         }
 
@@ -226,24 +226,24 @@ module.exports = (test, dependencies) => {
           properties: {
             firstName: {
               type: 'string',
-              description: 'The person\'s first name.'
+              description: 'The person\'s first name.',
             },
             lastName: {
               type: 'string',
-              description: 'The person\'s last name.'
+              description: 'The person\'s last name.',
             },
             age: {
               description: 'Age in years which must be equal to or greater than zero.',
               type: 'integer',
-              minimum: 0
-            }
-          }
+              minimum: 0,
+            },
+          },
         })
 
         const person = new Person({
           firstName: 'John',
           lastName: 'Doe',
-          age: 21
+          age: 21,
         })
 
         /* console. */ log(person)
@@ -253,7 +253,7 @@ module.exports = (test, dependencies) => {
           const person2 = new Person({
             firstName: 1,
             lastName: 2,
-            age: -1
+            age: -1,
           })
           /* console. */ log('SHOULD NOT GET HERE', person2)
         } catch (e) {
@@ -299,7 +299,7 @@ module.exports = (test, dependencies) => {
               }
 
               return validationResult
-            }
+            },
           }
         }
 
@@ -308,13 +308,13 @@ module.exports = (test, dependencies) => {
         const Person = immutable('Person', {
           firstName: 'string',
           lastName: 'string',
-          age: gt(0)
+          age: gt(0),
         })
 
         const person = new Person({
           firstName: 'John',
           lastName: 'Doe',
-          age: 21
+          age: 21,
         })
 
         /* console. */ log(person)
@@ -324,7 +324,7 @@ module.exports = (test, dependencies) => {
           const person2 = new Person({
             firstName: 1,
             lastName: 2,
-            age: -1
+            age: -1,
           })
           /* console. */ log('SHOULD NOT GET HERE', person2)
         } catch (e) {
@@ -347,13 +347,13 @@ module.exports = (test, dependencies) => {
           price: 'decimal:2',
           type: /^book|magazine|card$/,
           metadata: {
-            keywords: 'string[]'
-          }
+            keywords: 'string[]',
+          },
         })
 
         registerBlueprint('Author', {
           firstName: 'string',
-          lastName: 'string'
+          lastName: 'string',
         })
 
         const Product = immutable(productBp)
@@ -364,10 +364,10 @@ module.exports = (test, dependencies) => {
               ...productBp.schema.metadata,
               ...{
                 isbn: 'string',
-                authors: 'Author[]'
-              }
-            }
-          }
+                authors: 'Author[]',
+              },
+            },
+          },
         })
 
         const product = new Product({
@@ -377,8 +377,8 @@ module.exports = (test, dependencies) => {
           price: 9.99,
           type: 'card',
           metadata: {
-            keywords: ['bday']
-          }
+            keywords: ['bday'],
+          },
         })
 
         const book = new Book({
@@ -392,9 +392,9 @@ module.exports = (test, dependencies) => {
             isbn: '0-307-26399-1',
             authors: [{
               firstName: 'Karen',
-              lastName: 'Russell'
-            }]
-          }
+              lastName: 'Russell',
+            }],
+          },
         })
 
         /* console. */ log(product)
@@ -408,9 +408,9 @@ module.exports = (test, dependencies) => {
           type: /^book$/i,
           comparableType: ({ input }) => {
             return {
-              value: () => input.toLowerCase()
+              value: () => input.toLowerCase(),
             }
-          }
+          },
         }, { functionsOnPrototype: true })
 
         const p1 = new Product({ type: 'book' })
@@ -426,9 +426,9 @@ module.exports = (test, dependencies) => {
           type: /^book$/i,
           comparableType: ({ input }) => {
             return {
-              value: () => input.toLowerCase()
+              value: () => input.toLowerCase(),
             }
-          }
+          },
         })
 
         const p1 = new Product({ type: 'book' })
@@ -436,7 +436,7 @@ module.exports = (test, dependencies) => {
 
         expect(p1.toObject({ removeFunctions: true }))
           .to.deep.equal(p2.toObject({ removeFunctions: true }))
-      }
-    }
+      },
+    },
   })
 }

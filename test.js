@@ -6,11 +6,11 @@ const Ajv = require('ajv')
 const suite = require('supposed')
   .Suite({
     assertionLibrary: expect,
-    inject: { ...blueprint, ...immutable, ...{ Ajv } }
+    inject: { ...blueprint, ...immutable, ...{ Ajv } },
   })
 
 suite.runner({
   directories: ['./src'],
   matchesNamingConvention: /.(\.test\.js)$/i,
-  matchesIgnoredConvention: /node_modules/i
+  matchesIgnoredConvention: /node_modules/i,
 }).run()
