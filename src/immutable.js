@@ -43,10 +43,6 @@ module.exports = {
         bp = blueprint(name, schema)
       }
 
-      if (bp.err) {
-        throw bp.err
-      }
-
       return {
         validate: (input) => {
           const validationResult = bp.validate(input)
