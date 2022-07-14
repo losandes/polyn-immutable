@@ -337,10 +337,22 @@ module.exports = (test, dependencies) => {
         }
       },
       'schema-inheritance': () => {
-        const { blueprint, registerBlueprint } = require('@polyn/blueprint')
+        const { registerBlueprint } = require('@polyn/blueprint')
         // const { immutable } = require('@polyn/immutable')
 
-        const productBp = blueprint('Product', {
+        /**
+         * Using blueprint's `registerBlueprint`, we can establish
+         * types we can use in our schemas.
+         */
+        registerBlueprint('Author', {
+          firstName: 'string',
+          lastName: 'string',
+        })
+
+        /**
+         * Create an immutable object
+         */
+        const Product = immutable('Product', {
           id: 'string',
           title: 'string',
           description: 'string',
@@ -351,17 +363,17 @@ module.exports = (test, dependencies) => {
           },
         })
 
-        registerBlueprint('Author', {
-          firstName: 'string',
-          lastName: 'string',
-        })
-
-        const Product = immutable(productBp)
+        /**
+         * Using `schema`, we can inherit the schema of
+         * another immutable. This example demonstrates
+         * subtype polymorphism of both the primary schema,
+         * and a nested schema
+         */
         const Book = immutable('Book', {
-          ...productBp.schema,
+          ...Product.schema,
           ...{
             metadata: {
-              ...productBp.schema.metadata,
+              ...Product.schema.metadata,
               ...{
                 isbn: 'string',
                 authors: 'Author[]',

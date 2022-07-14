@@ -1,12 +1,12 @@
 {
   "name": "@polyn/immutable",
-  "version": "1.0.11",
+  "version": "1.1.0",
   "description": "Define object schema's for validation, and construction of immutable objects",
   "main": "index.js",
   "types": "index.d.ts",
   "scripts": {
     "build": "node build.js",
-    "pre-push": "node pre-push.js",
+    "pre-push": "npm run lint && npm test && node pre-push.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "node test.js -r nyan && node test-browser.js -r nyan && npm run test:ts",
@@ -17,11 +17,6 @@
     "watch": "nodemon -e js --exec 'node test.js --tap | tap-nyan'",
     "temp": "echo temp"
   },
-  "pre-push": [
-    "lint",
-    "test",
-    "pre-push"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/losandes/polyn-immutable.git"
@@ -48,7 +43,7 @@
     "@polyn/blueprint": "2.6.0",
     "@polyn/immutable": "link:",
     "@types/chai": "~4.2.22",
-    "@types/uuid": "~8.3.1",
+    "@types/uuid": "~8.3.4",
     "ajv": "~6.12.6",
     "chai": "~4.3.4",
     "coveralls": "~3.1.1",
@@ -58,7 +53,6 @@
     "eslint-plugin-node": "~11.1.0",
     "eslint-plugin-promise": "~4.3.1",
     "nyc": "~15.1.0",
-    "pre-push": "~0.1.1",
     "puppeteer": "~8.0.0",
     "supposed": "~1.1.1",
     "typescript": "~4.2.4",

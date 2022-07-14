@@ -83,7 +83,8 @@ module.exports = {
      * Creates a new, mutable object from the given, `that`
      * @curried
      * @param {any} that - the object being patched
-     * @param {any} options - whether or not to remove functions
+     * @param {any?} options - optional conversion settings
+     * @param {boolean?} options.removeFunctions - whether or not to remove functions
      */
     const toObject = (that, options) => {
       const shallowClone = Object.assign({}, that)
@@ -135,7 +136,8 @@ module.exports = {
        * value are immutable
        * @curried
        * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
-       * @param {object} schema - the blueprint schema
+       * @param {any} schema - the blueprint schema
+       * @param {{ functionsOnPrototype: boolean }} - optional settings
        */
       const immutable = (name, schema, options) => {
         const validator = new config.Validator(name, schema)
@@ -167,7 +169,7 @@ module.exports = {
 
         /**
          * Freezes an object, and all of it's values, recursively
-         * @param {object} input - the object to freeze
+         * @param {any} input - the object to freeze
          */
         const Immutable = class {
           constructor (input) {
@@ -188,10 +190,20 @@ module.exports = {
             }
           }
 
+          /**
+           * Converts this instance of Immutable to a mutable, plain-old-Object
+           * @param {any?} options - optional conversion settings
+           * @param {boolean?} options.removeFunctions - whether or not to remove functions
+           * @returns {any} - a mutable, plain-old-Object with the properties and values of this instance of Immutable
+           */
           toObject (options) {
             return toObject(this, options)
           }
 
+          /**
+           * A boolean for verifying that this object is an instance of Immutable
+           * @returns {boolean} - always returns true
+           */
           isPolynImmutable () {
             return true
           }
@@ -199,7 +211,7 @@ module.exports = {
 
         /**
          * Validates, and then freezes an object, and all of it's values, recursively
-         * @param {object} input - the object to freeze
+         * @param {any} input - the object to validate and freeze
          */
         class ValidatedImmutable extends Immutable {
           constructor (input) {
@@ -212,14 +224,37 @@ module.exports = {
             }
           }
 
+          /**
+           * This method provides a simple way to achieve mutation, without
+           * mutating existing instances of a ValidatedImmutable.
+           *
+           * It creates a new instance of ValidatedImmutable so the existing
+           * instance does not mutate. The values of the `input` argument
+           * supercede the values of the existing instance in the new
+           * object that is created.
+           *
+           * @param {any?} input - an object with the values that are being changed
+           * @returns {ValidatedImmutable} - the new instance with superceded/patched values
+           */
           patch (input) {
             return new ValidatedImmutable(patch(this)(input))
           }
 
+          /**
+           * Returns the schema (i.e. blueprint, AJV, etc.) that was passed
+           * to this `immutable` function
+           * @returns {any} - the schema that was passed to this `immutable` function
+           */
           getSchema () {
             return schema
           }
         }
+
+        /**
+         * The schema (i.e. blueprint, AJV, etc.) that was passed to this
+         * `immutable` function
+         */
+        ValidatedImmutable.schema = schema
 
         return ValidatedImmutable
       }

@@ -280,7 +280,7 @@ expect(makeNumber.gettersAndSetters.immutableTwo).to.equal(2)
 expect(makeNumber.gettersAndSetters.get()).to.equal(3)
 ```
 
-We have the option of allowing existing scope to be managed by the developer, or to fully clone all functions and manage them in this library. The latter is likely to produce more astonishment than the prior, so this library assumes you will manage your scopes. If you don't want inner scope to change, make it `immutable`, or simply don't change it (if you're using this library, there's a good chance you believe _getters_ and _setters_ are an anti-pattern anyway).
+We have the option of allowing existing scope to be managed by the developer, or to fully clone all functions and manage them in this library. We think the latter is likely to produce more astonishment than the prior, so this library assumes you will manage your scopes. If you don't want inner scope to change, make it `immutable`, or simply don't change it.
 
 ## Using JSON Schema or Other Validators
 
@@ -500,37 +500,49 @@ const person = new Person({
 ### Schema Inheritance
 
 ```JavaScript
-const { blueprint, registerBlueprint } = require('@polyn/blueprint')
+const { registerBlueprint } = require('@polyn/blueprint')
 const { immutable } = require('@polyn/immutable')
 
-const productBp = blueprint('Product', {
+/**
+ * Using blueprint's `registerBlueprint`, we can establish
+ * types we can use in our schemas.
+ */
+registerBlueprint('Author', {
+  firstName: 'string',
+  lastName: 'string',
+})
+
+/**
+ * Create an immutable object
+ */
+const Product = immutable('Product', {
   id: 'string',
   title: 'string',
   description: 'string',
   price: 'decimal:2',
   type: /^book|magazine|card$/,
   metadata: {
-    keywords: 'string[]'
-  }
+    keywords: 'string[]',
+  },
 })
 
-registerBlueprint('Author', {
-  firstName: 'string',
-  lastName: 'string'
-})
-
-const Product = immutable(productBp)
+/**
+ * Using `schema`, we can inherit the schema of
+ * another immutable. This example demonstrates
+ * subtype polymorphism of both the primary schema,
+ * and a nested schema
+ */
 const Book = immutable('Book', {
-  ...productBp.schema,
+  ...Product.schema,
   ...{
     metadata: {
-      ...productBp.schema.metadata,
+      ...Product.schema.metadata,
       ...{
         isbn: 'string',
-        authors: 'Author[]'
-      }
-    }
-  }
+        authors: 'Author[]',
+      },
+    },
+  },
 })
 
 const product = new Product({
@@ -540,8 +552,8 @@ const product = new Product({
   price: 9.99,
   type: 'card',
   metadata: {
-    keywords: ['bday']
-  }
+    keywords: ['bday'],
+  },
 })
 
 const book = new Book({
@@ -555,9 +567,9 @@ const book = new Book({
     isbn: '0-307-26399-1',
     authors: [{
       firstName: 'Karen',
-      lastName: 'Russell'
-    }]
-  }
+      lastName: 'Russell',
+    }],
+  },
 })
 
 console.log(product)

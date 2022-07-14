@@ -29,6 +29,10 @@ export interface IArrayUtils {
   copy (): any[]
 }
 
+export interface IImmutableFactoryOptions {
+  functionsOnPrototype?: boolean
+}
+
 /**
  * Creates a Validator (@polyn/blueprint by default) and returns a
  * function for creating new instances of objects that get validated
@@ -39,8 +43,13 @@ export interface IArrayUtils {
  * @param {interface} TInput - The interface this immutable's constructor accepts as input
  * @param {string|blueprint} name - the name of the immutable, or an existing blueprint
  * @param {object} schema - the blueprint schema
+ * @param {IImmutableFactoryOptions} options - optional settings
  */
-export function immutable<T = any, TInput = any> (name: string, schema: object): new (input: TInput) => T;
+export function immutable<T = any, TInput = any> (
+  name: string,
+  schema: object,
+  options?: IImmutableFactoryOptions
+) : new (input: TInput) => T;
 
 export interface IImmutable {
   /**
