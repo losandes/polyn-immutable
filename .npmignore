@@ -9,7 +9,7 @@ npm-debug.log
 build.js
 examples-typescript.js
 examples-typescript.ts
-index.browser.js
+index-browser.js
 pre-push.js
 test-browser-server.js
 test-browser.js
