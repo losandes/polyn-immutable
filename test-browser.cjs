@@ -1,4 +1,4 @@
-const test = require('./test-browser-server')
+const test = require('./test-browser-server.cjs')
 
 test().then((context) => {
   context.server.close()

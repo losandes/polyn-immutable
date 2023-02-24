@@ -1,9 +1,10 @@
-const { expect } = require('chai')
-const blueprint = require('@polyn/blueprint')
-const immutable = require('./index.js')
 const Ajv = require('ajv')
+const { expect } = require('chai')
+const supposed = require('supposed')
+const blueprint = require('@polyn/blueprint')
+const immutable = require('@polyn/immutable')
 
-const suite = require('supposed').Suite({
+const suite = supposed.Suite({
   name: '@polyn/immutable (cjs)',
   assertionLibrary: expect,
   inject: { ...blueprint, ...immutable, ...{ Ajv } },

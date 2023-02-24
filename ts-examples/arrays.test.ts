@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { array } from '..';
+import { array } from '@polyn/immutable';
 
 export function run () {
   'use strict';

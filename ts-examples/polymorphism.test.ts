@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { immutable, IValidatedImmutable } from '..'
+import { immutable, IValidatedImmutable } from '@polyn/immutable'
 
 export function run () {
   'use strict';

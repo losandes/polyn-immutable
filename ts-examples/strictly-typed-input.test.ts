@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { gt, optional, IValidatorArg } from '@polyn/blueprint';
-import { immutable, IValidatedImmutable } from '..';
+import { immutable, IValidatedImmutable } from '@polyn/immutable';
 import { v4 as uuid } from 'uuid';
 
 const UUID_REGEX = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;

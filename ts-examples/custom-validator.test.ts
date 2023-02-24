@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { PolynImmutable } from '..'
+import { PolynImmutable } from '@polyn/immutable'
 import * as Ajv from 'ajv'
 
 export function run () {
