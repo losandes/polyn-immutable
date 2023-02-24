@@ -374,7 +374,7 @@ const { Immutable } = require('@polyn/immutable')
 function AjvValidator (name, schema) {
   const makeErrorText = (errors) => {
     return errors && errors
-      .map((error) => `${name}${error.dataPath} ${error.message}`)
+      .map((error) => `${name}${error.instancePath} ${error.message}`)
       .join(', ')
   }
   return {
@@ -433,9 +433,9 @@ try {
   console.log(e.message)
   // prints ( `\` line breaks for readability):
   // Invalid Person: \
-  // Person.firstName should be string, \
-  // Person.lastName should be string, \
-  // Person.age should be >= 0
+  // Person/firstName must be string, \
+  // Person/lastName must be string, \
+  // Person/age must be >= 0
 }
 ```
 

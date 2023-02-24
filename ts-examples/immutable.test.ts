@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { immutable, IValidatedImmutable } from '..'
+import { immutable, IValidatedImmutable } from '@polyn/immutable'
 import { gt } from '@polyn/blueprint'
 
 export function run () {
