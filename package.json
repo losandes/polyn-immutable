@@ -66,15 +66,10 @@
     "immutability"
   ],
   "devDependencies": {
-    "@polyn/immutable": "link:"
-  },
-  "peerDependencies": {
-    "@polyn/blueprint": "2.7.0"
-  },
-  "dependencies": {
     "@babel/core": "~7.21.0",
     "@babel/preset-env": "~7.20.2",
     "@polyn/blueprint": "~2.7.0",
+    "@polyn/immutable": "link:",
     "@types/chai": "~4.3.4",
     "@types/uuid": "~9.0.1",
     "ajv": "~6.12.6",
@@ -92,5 +87,8 @@
     "supposed": "~1.1.6",
     "typescript": "~4.9.5",
     "uuid": "~9.0.0"
+  },
+  "peerDependencies": {
+    "@polyn/blueprint": "2.7.0"
   }
 }
