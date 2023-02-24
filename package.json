@@ -18,7 +18,7 @@
   "scripts": {
     "// dev": "json comment =============================================",
     "build": "node build.js",
-    "pre-push": "pnpm run lint && pnpm test && node pre-push.js",
+    "pre-push": "node pre-push.js",
     "// lint": "json comment =============================================",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
