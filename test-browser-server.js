@@ -1,13 +1,18 @@
 const { expect } = require('chai')
 const path = require('path')
 const puppeteer = require('puppeteer')
-const suite = require('supposed')
-  .Suite({ assertionLibrary: expect })
-const __projectdir = process.cwd()
+const { Suite } = require('supposed')
+const immutable = require('@polyn/immutable')
 
-suite.sut = require('./index.js')
-module.exports = suite.runner({
-  title: 'polyn-immutable',
+const __projectdir = process.cwd()
+const suiteConfig = {
+  name: '@polyn/immutable (browser)',
+  assertionLibrary: expect,
+  sut: immutable,
+}
+const suite = Suite(suiteConfig)
+const runner = suite.runner({
+  title: suiteConfig.name,
   directories: ['./src'],
   dependencies: [
     '/node_modules/chai/chai.js',
@@ -22,31 +27,56 @@ module.exports = suite.runner({
     '  assertionLibrary: chai.expect,' +
     '  inject: { ...polyn.blueprint, ...polyn.immutable, ...{ Ajv } }' +
     '}',
-}).startServer()
-  .then(async (context) => {
-    const browser = await puppeteer.launch()
-    const page = await browser.newPage()
+  // stringifiedSuiteConfig: '{ reporter: "event", assertionLibrary: chai.expect, inject: { expect: chai.expect, sut: polyn.blueprint } }',
+})
 
-    page.on('console', async (msg) => {
-      const txt = msg.text()
+const debug = false
+const puppeteerConfig = debug
+  ? {
+      headless: false,
+      slowMo: 250, // slow down by 250ms
+      devtools: true,
+    }
+  : undefined
 
-      try {
-        const json = JSON.parse(txt)
-        context.lastEvent = json
-        suite.config.reporters.forEach((reporter) => reporter.write(json))
+const runTestsInBrowser = async (context) => {
+  const browser = await puppeteer.launch(puppeteerConfig)
+  const page = await browser.newPage()
 
-        if (json.type === 'END' && json.totals.failed > 0) {
-          // maybe print a PDF that someone can review if this is being automated
-          await page.pdf({ path: path.join(__projectdir, `test-log.${Date.now()}.pdf`), format: 'A4' })
-        }
-      } catch (e) {
-        console.log(txt) // eslint-disable-line no-console
-        context.lastEvent = txt
+  page.on('console', async (msg) => {
+    const txt = msg.text()
+
+    try {
+      const json = JSON.parse(txt)
+      context.lastEvent = json
+      suite.config.reporters.forEach((reporter) => reporter.write({
+        ...json,
+        ...{ suiteId: suiteConfig.name },
+      }))
+
+      if (json.type === 'END' && json.totals.failed > 0) {
+        // maybe print a PDF that someone can review if this is being automated
+        await page.pdf({ path: path.join(__projectdir, `test-log.${Date.now()}.pdf`), format: 'A4' })
       }
-    })
-
-    await page.goto(`http://localhost:${context.runConfig.port}`, { waitUntil: 'networkidle2' })
-    await browser.close()
-
-    return context
+    } catch (err) {
+      context.lastEvent = { msg: txt, err }
+    }
   })
+
+  await page.goto(`http://localhost:${context.runConfig.port}`, { waitUntil: 'networkidle2' })
+  if (debug) {
+    await page.evaluate(() => {
+      debugger // eslint-disable-line no-debugger
+    })
+  }
+  await browser.close()
+
+  return context
+}
+
+module.exports = async () => {
+  const context = await runner.startServer()
+  const finalContext = await runTestsInBrowser(context)
+
+  return finalContext
+}

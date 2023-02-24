@@ -43,28 +43,31 @@
     "immutability"
   ],
   "devDependencies": {
-    "@babel/core": "~7.13.16",
-    "@babel/preset-env": "~7.13.15",
-    "@polyn/blueprint": "2.6.0",
-    "@polyn/immutable": "link:",
-    "@types/chai": "~4.2.22",
-    "@types/uuid": "~8.3.1",
-    "ajv": "~6.12.6",
-    "chai": "~4.3.4",
-    "coveralls": "~3.1.1",
-    "eslint": "~7.23.0",
-    "eslint-config-standard": "~16.0.3",
-    "eslint-plugin-import": "~2.22.1",
-    "eslint-plugin-node": "~11.1.0",
-    "eslint-plugin-promise": "~4.3.1",
-    "nyc": "~15.1.0",
-    "pre-push": "~0.1.1",
-    "puppeteer": "~8.0.0",
-    "supposed": "~1.1.1",
-    "typescript": "~4.2.4",
-    "uuid": "~8.3.2"
+    "@polyn/immutable": "link:"
   },
   "peerDependencies": {
-    "@polyn/blueprint": "2.6.0"
+    "@polyn/blueprint": "2.7.0"
+  },
+  "dependencies": {
+    "@babel/core": "~7.21.0",
+    "@babel/preset-env": "~7.20.2",
+    "@polyn/blueprint": "~2.7.0",
+    "@types/chai": "~4.3.4",
+    "@types/uuid": "~9.0.1",
+    "ajv": "~6.12.6",
+    "chai": "~4.3.7",
+    "coveralls": "~3.1.1",
+    "eslint": "~8.34.0",
+    "eslint-config-standard": "~17.0.0",
+    "eslint-plugin-import": "~2.27.5",
+    "eslint-plugin-n": "~15.6.1",
+    "eslint-plugin-node": "~11.1.0",
+    "eslint-plugin-promise": "~6.1.1",
+    "nyc": "~15.1.0",
+    "pre-push": "~0.1.4",
+    "puppeteer": "~19.7.2",
+    "supposed": "~1.1.6",
+    "typescript": "~4.9.5",
+    "uuid": "~9.0.0"
   }
 }
